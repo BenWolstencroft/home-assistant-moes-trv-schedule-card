@@ -1,0 +1,25 @@
+{
+  "name": "MOES TRV Schedule Card",
+  "version": "1.0.0",
+  "description": "Custom Lovelace card for managing weekly schedules on MOES Thermostatic Radiator Valves",
+  "author": "Ben Wolstencroft",
+  "license": "MIT",
+  "homepage": "https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card",
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "moes",
+    "trv",
+    "thermostat",
+    "heating",
+    "schedule"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card/issues"
+  }
+}

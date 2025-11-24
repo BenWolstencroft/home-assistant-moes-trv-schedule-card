@@ -1,0 +1,25 @@
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build
+dist/
+*.min.js
+*.min.js.map
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.log
+.cache/

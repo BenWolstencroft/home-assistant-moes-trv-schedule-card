@@ -1,0 +1,11 @@
+# Basic Usage Example
+# MOES TRVs support 3 schedule groups (Weekdays, Saturday, Sunday)
+# Each group has exactly 4 time periods
+
+# For Zigbee/MQTT devices with text entity (most common)
+type: custom:moes-trv-schedule-card
+entity: text.bedroom_trv_schedule
+
+# OR for Tuya/Climate entities
+# type: custom:moes-trv-schedule-card
+# entity: climate.bedroom_trv

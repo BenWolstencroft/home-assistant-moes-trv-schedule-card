@@ -1,0 +1,22 @@
+# Dashboard with Grid Layout Example
+# Using multiple cards in a grid
+# Mix of Zigbee text entities and climate entities
+
+type: grid
+columns: 2
+cards:
+  - type: custom:moes-trv-schedule-card
+    entity: text.living_room_trv_schedule
+    title: Living Room
+    
+  - type: custom:moes-trv-schedule-card
+    entity: text.bedroom_trv_schedule
+    title: Bedroom
+    
+  - type: custom:moes-trv-schedule-card
+    entity: text.office_trv_schedule
+    title: Office
+    
+  - type: custom:moes-trv-schedule-card
+    entity: text.kids_room_trv_schedule
+    title: Kids Room

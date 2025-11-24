@@ -1,0 +1,25 @@
+# Complete Configuration Example
+# Configure all available options for a MOES TRV schedule card
+
+# For Zigbee/MQTT devices (recommended)
+type: custom:moes-trv-schedule-card
+entity: text.living_room_trv_schedule
+title: Living Room Heating Schedule
+show_current_temp: true
+min_temp: 10
+max_temp: 28
+temp_step: 0.5
+time_format: 24h
+
+# OR for Tuya/WiFi devices
+# type: custom:moes-trv-schedule-card
+# entity: climate.living_room_trv
+# title: Living Room Heating Schedule
+# show_current_temp: true
+# min_temp: 10
+# max_temp: 28
+# temp_step: 0.5
+# time_format: 24h
+
+# Note: MOES TRVs have 3 schedule groups (Weekdays, Saturday, Sunday)
+# Each group has exactly 4 periods - this cannot be changed

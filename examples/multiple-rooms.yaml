@@ -1,0 +1,26 @@
+# Multiple TRV Cards Example
+# Manage different rooms with separate schedule cards
+# Each room can have different Weekday/Saturday/Sunday schedules
+
+# Living Room (Zigbee/MQTT text entity)
+type: custom:moes-trv-schedule-card
+entity: text.living_room_trv_schedule
+title: Living Room Schedule
+
+---
+
+# Bedroom - Lower temps for sleeping (Zigbee/MQTT)
+type: custom:moes-trv-schedule-card
+entity: text.bedroom_trv_schedule
+title: Bedroom Schedule
+min_temp: 16
+max_temp: 22
+
+---
+
+# Office - Only heat during work hours on weekdays (Tuya example)
+type: custom:moes-trv-schedule-card
+entity: climate.office_trv
+title: Office Schedule
+min_temp: 15
+max_temp: 21

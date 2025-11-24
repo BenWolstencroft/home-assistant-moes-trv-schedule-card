@@ -1,3 +1,23 @@
+## 1.1.0 (2025-11-24)
+
+### Features
+
+- **Compact dashboard display** showing next scheduled transition
+- **Click-to-edit** dialog interface for full schedule management
+- Current temperature display on compact card
+- Reduced card size from 6 to 2 for minimal dashboard footprint
+
+### Improvements
+
+- **Compact dashboard display** showing next scheduled transition
+- **Click-to-edit** dialog interface for full schedule management
+- Current temperature display on compact card
+- Configuration editor with ha-entity-picker
+- More efficient use of dashboard space
+- Better user experience with on-demand editor
+- Improved mobile usability with dialog interface
+- Expand/collapse schedule groups in dialog
+
 ## 1.0.0 (2025-11-24)
 
 ### Features
@@ -10,9 +30,7 @@
 - Support for climate entities (Tuya devices)
 - Automatic entity type detection
 - MOES-compliant schedule format generation with double-space separators
-- Configuration editor with entity selector
 - Temperature range validation
-- Expand/collapse schedule groups
 - Real-time schedule updates
 - Modern UI matching Home Assistant design
 

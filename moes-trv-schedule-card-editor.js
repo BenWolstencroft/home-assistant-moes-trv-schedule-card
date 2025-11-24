@@ -32,18 +32,6 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
       return;
     }
 
-    // Get all climate and text entities for the dropdown (text entities are common for Zigbee/MQTT TRVs)
-    const climateEntities = Object.keys(this._hass.states)
-      .filter(entityId => entityId.startsWith('climate.'))
-      .sort();
-    
-    const textEntities = Object.keys(this._hass.states)
-      .filter(entityId => entityId.startsWith('text.') && 
-              (entityId.includes('schedule') || entityId.includes('trv')))
-      .sort();
-    
-    const allEntities = [...climateEntities, ...textEntities];
-
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -105,24 +93,14 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
         <div class="section-title">Entity Configuration</div>
         
         <div class="config-row">
-          <label for="entity-select">MOES TRV Entity</label>
-          <select id="entity-select">
-            <option value="">Select an entity...</option>
-            ${climateEntities.length > 0 ? `<optgroup label="Climate Entities">
-              ${climateEntities.map(entityId => `
-                <option value="${entityId}" ${this._config.entity === entityId ? 'selected' : ''}>
-                  ${this.getEntityName(entityId)}
-                </option>
-              `).join('')}
-            </optgroup>` : ''}
-            ${textEntities.length > 0 ? `<optgroup label="Text Entities (Zigbee/MQTT)">
-              ${textEntities.map(entityId => `
-                <option value="${entityId}" ${this._config.entity === entityId ? 'selected' : ''}>
-                  ${this.getEntityName(entityId)}
-                </option>
-              `).join('')}
-            </optgroup>` : ''}
-          </select>
+          <label for="entity-picker">MOES TRV Entity</label>
+          <ha-entity-picker
+            id="entity-picker"
+            .hass="${this._hass}"
+            .value="${this._config.entity || ''}"
+            .includeDomains="${['climate', 'text']}"
+            allow-custom-entity
+          ></ha-entity-picker>
           <div class="help-text">
             Select the schedule entity for your MOES TRV (climate entity or text entity for Zigbee/MQTT devices)
           </div>
@@ -214,11 +192,13 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
   }
 
   attachEventListeners() {
-    const entitySelect = this.shadowRoot.getElementById('entity-select');
-    entitySelect.addEventListener('change', (e) => {
-      this._config = { ...this._config, entity: e.target.value };
-      this.configChanged(this._config);
-    });
+    const entityPicker = this.shadowRoot.getElementById('entity-picker');
+    if (entityPicker) {
+      entityPicker.addEventListener('value-changed', (e) => {
+        this._config = { ...this._config, entity: e.detail.value };
+        this.configChanged(this._config);
+      });
+    }
 
     const titleInput = this.shadowRoot.getElementById('title-input');
     titleInput.addEventListener('change', (e) => {

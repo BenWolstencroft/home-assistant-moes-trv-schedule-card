@@ -2,15 +2,17 @@
 
 A custom Home Assistant Lovelace card for managing weekly heating schedules on MOES Thermostatic Radiator Valves (TRVs).
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2023.1%2B-green.svg)
 
 ## Features
 
+- 📊 **Compact Display** - Shows next scheduled transition time and temperature on dashboard
 - 📅 **Three Schedule Groups** - Configure Weekdays, Saturday, and Sunday schedules
 - ⏰ **Four Time Periods** - Set 4 temperature periods per schedule group (MOES TRV standard)
 - 🌡️ **Temperature Control** - Easy temperature adjustment for each period
 - 🎨 **Modern UI** - Clean, responsive design that matches Home Assistant's interface
+- 🖱️ **Click-to-Edit** - Click the card to open full schedule editor in dialog popup
 - 🔄 **Real-time Updates** - Changes apply immediately to your MOES TRV
 - 🎯 **Visual Editor** - Intuitive configuration through the Lovelace UI
 - ✅ **MOES Format** - Generates correct schedule format with double-space separators
@@ -113,12 +115,23 @@ time_format: 24h
 
 ## Usage
 
-### Setting Up a Schedule
+### Compact Display
 
-1. **Expand a Schedule Group**: Click on Weekdays, Saturday, or Sunday header to expand/collapse
-2. **Modify Times**: Click on the time input to set when the temperature should change
-3. **Set Temperatures**: Adjust the temperature for each of the 4 periods
-4. **Apply**: Click "Apply Schedule" to send the schedule to your TRV
+The card shows a minimal dashboard view with:
+- **Entity Name**: Your TRV device name
+- **Next Transition**: The next scheduled temperature change (time and target temperature)
+- **Current Temperature**: The current temperature reading (if available)
+
+**Click anywhere on the card to open the full schedule editor.**
+
+### Editing the Schedule
+
+1. **Open Editor**: Click on the compact card to open the schedule editor dialog
+2. **Expand a Schedule Group**: Click on Weekdays, Saturday, or Sunday header to expand/collapse
+3. **Modify Times**: Click on the time input to set when the temperature should change
+4. **Set Temperatures**: Adjust the temperature for each of the 4 periods
+5. **Apply**: Click "Apply Schedule" to send the schedule to your TRV
+6. **Close**: Click the × button or click outside the dialog to close
 
 ### Schedule Format
 
@@ -243,18 +256,6 @@ Contributions are welcome! Please:
 ## License
 
 MIT License - see LICENSE file for details
-
-## Changelog
-
-### 1.0.0 (2025-11-24)
-
-- Initial release
-- Weekly schedule management
-- Multiple periods per day
-- Copy schedule functionality
-- Visual configuration editor
-- Temperature and time validation
-- Responsive design
 
 ## Acknowledgments
 

@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.0.0
+ * Version: 1.1.0
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -19,6 +19,7 @@ class MoesTrvScheduleCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._config = {};
     this._schedule = this.getDefaultSchedule();
+    this._dialogOpen = false;
   }
 
   setConfig(config) {
@@ -108,6 +109,57 @@ class MoesTrvScheduleCard extends HTMLElement {
     return [...weekdaysParts, ...saturdayParts, ...sundayParts].join('  ');
   }
 
+  getNextTransition() {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    // Determine which schedule group to use
+    let scheduleKey;
+    if (currentDay === 0) {
+      scheduleKey = 'sunday';
+    } else if (currentDay === 6) {
+      scheduleKey = 'saturday';
+    } else {
+      scheduleKey = 'weekdays';
+    }
+    
+    const todaySchedule = this._schedule[scheduleKey];
+    
+    // Find next transition today
+    for (const period of todaySchedule) {
+      if (period.time > currentTime) {
+        return { time: period.time, temp: period.temp, today: true };
+      }
+    }
+    
+    // If no more transitions today, get first period of tomorrow
+    let tomorrowKey;
+    if (currentDay === 6) { // Saturday -> Sunday
+      tomorrowKey = 'sunday';
+    } else if (currentDay === 0) { // Sunday -> Monday (weekdays)
+      tomorrowKey = 'weekdays';
+    } else if (currentDay === 5) { // Friday -> Saturday
+      tomorrowKey = 'saturday';
+    } else { // Weekday -> Weekday
+      tomorrowKey = 'weekdays';
+    }
+    
+    const tomorrowSchedule = this._schedule[tomorrowKey];
+    return { time: tomorrowSchedule[0].time, temp: tomorrowSchedule[0].temp, today: false };
+  }
+
+  getCurrentTemp() {
+    const entity = this._hass.states[this._config.entity];
+    if (!entity) return null;
+    
+    // Try to get current temperature from entity attributes
+    if (entity.attributes.current_temperature !== undefined) {
+      return entity.attributes.current_temperature;
+    }
+    return null;
+  }
+
   render() {
     if (!this._hass || !this._config.entity) {
       return;
@@ -115,6 +167,8 @@ class MoesTrvScheduleCard extends HTMLElement {
 
     const entity = this._hass.states[this._config.entity];
     const entityName = entity ? entity.attributes.friendly_name || this._config.entity : this._config.entity;
+    const nextTransition = this.getNextTransition();
+    const currentTemp = this.getCurrentTemp();
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -122,23 +176,54 @@ class MoesTrvScheduleCard extends HTMLElement {
           display: block;
         }
         ha-card {
+          cursor: pointer;
+          transition: box-shadow 0.2s;
+        }
+        ha-card:hover {
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .card-content {
           padding: 16px;
         }
-        .card-header {
+        .header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
-        .card-header h2 {
-          margin: 0;
-          font-size: 1.5em;
+        .entity-name {
+          font-size: 1.1em;
           font-weight: 500;
+          color: var(--primary-text-color);
         }
-        .entity-info {
+        .edit-icon {
+          opacity: 0.6;
+          font-size: 20px;
+        }
+        .next-transition {
+          display: flex;
+          align-items: baseline;
+          gap: 12px;
+          margin-top: 8px;
+        }
+        .next-label {
           font-size: 0.9em;
           color: var(--secondary-text-color);
-          margin-bottom: 16px;
+        }
+        .next-time {
+          font-size: 1.8em;
+          font-weight: 500;
+          color: var(--primary-color);
+        }
+        .next-temp {
+          font-size: 1.5em;
+          font-weight: 500;
+          color: var(--primary-text-color);
+        }
+        .current-temp {
+          font-size: 0.9em;
+          color: var(--secondary-text-color);
+          margin-top: 8px;
         }
         .days-container {
           display: flex;
@@ -274,35 +359,128 @@ class MoesTrvScheduleCard extends HTMLElement {
           background: var(--error-color, #f44336);
           color: white;
         }
+        /* Dialog Styles */
+        .dialog-overlay {
+          display: ${this._dialogOpen ? 'flex' : 'none'};
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 1000;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+        .dialog-content {
+          background: var(--card-background-color);
+          border-radius: 8px;
+          max-width: 600px;
+          max-height: 90vh;
+          overflow-y: auto;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+          width: 100%;
+        }
+        .dialog-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--divider-color);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .dialog-header h2 {
+          margin: 0;
+          font-size: 1.2em;
+        }
+        .dialog-close {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 24px;
+          color: var(--primary-text-color);
+          opacity: 0.6;
+          padding: 0;
+          width: 32px;
+          height: 32px;
+          transition: opacity 0.2s;
+        }
+        .dialog-close:hover {
+          opacity: 1;
+        }
+        .dialog-body {
+          padding: 20px;
+        }
       </style>
       
-      <ha-card>
+      <ha-card @click="${() => this._openDialog()}">
         <div class="card-header">
           <h2>TRV Schedule</h2>
+          <span class="edit-icon">✎</span>
         </div>
         
         <div class="entity-info">
           ${entityName}
         </div>
         
-        <div class="days-container">
-          ${this.renderDays()}
-        </div>
+        ${nextTransition ? `
+          <div class="next-transition">
+            <span class="next-label">${nextTransition.today ? 'Next:' : 'Tomorrow:'}</span>
+            <span class="next-time">${nextTransition.time}</span>
+            <span class="next-temp">${nextTransition.temp}°C</span>
+          </div>
+        ` : ''}
         
-        <div class="actions">
-          <button class="action-button secondary" @click="${() => this.resetSchedule()}">
-            Reset to Default
-          </button>
-          <button class="action-button primary" @click="${() => this.saveSchedule()}">
-            Apply Schedule
-          </button>
-        </div>
-        
-        ${this._statusMessage ? `<div class="status-message ${this._statusType}">${this._statusMessage}</div>` : ''}
+        ${currentTemp !== null ? `
+          <div class="current-temp">
+            Current: ${currentTemp}°C
+          </div>
+        ` : ''}
       </ha-card>
+      
+      <div class="dialog-overlay" @click="${(e) => this._closeDialogOnBackdrop(e)}">
+        <div class="dialog-content" @click="${(e) => e.stopPropagation()}">
+          <div class="dialog-header">
+            <h2>Edit TRV Schedule</h2>
+            <button class="dialog-close" @click="${() => this._closeDialog()}">×</button>
+          </div>
+          <div class="dialog-body">
+            <div class="days-container">
+              ${this.renderDays()}
+            </div>
+            
+            <div class="actions">
+              <button class="action-button secondary" @click="${() => this.resetSchedule()}">
+                Reset to Default
+              </button>
+              <button class="action-button primary" @click="${() => this.saveSchedule()}">
+                Apply Schedule
+              </button>
+            </div>
+            
+            ${this._statusMessage ? `<div class="status-message ${this._statusType}">${this._statusMessage}</div>` : ''}
+          </div>
+        </div>
+      </div>
     `;
 
     this.attachEventListeners();
+  }
+
+  _openDialog() {
+    this._dialogOpen = true;
+    this.render();
+  }
+
+  _closeDialog() {
+    this._dialogOpen = false;
+    this.render();
+  }
+
+  _closeDialogOnBackdrop(e) {
+    if (e.target.classList.contains('dialog-overlay')) {
+      this._closeDialog();
+    }
   }
 
   renderDays() {
@@ -465,7 +643,7 @@ class MoesTrvScheduleCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 6;
+    return 2; // Compact display - just shows next transition
   }
 
   static getConfigElement() {
@@ -496,7 +674,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.0.0 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.1.0 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

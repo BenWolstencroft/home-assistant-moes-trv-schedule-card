@@ -4,6 +4,22 @@ A custom Home Assistant Lovelace card for managing weekly heating schedules on M
 
 ![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2023.1%2B-green.svg)
+![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
+## Preview
+
+![MOES TRV Schedule Card Compact View](https://img.shields.io/badge/Preview-Click%20to%20Edit-blue?style=for-the-badge)
+
+**Compact Dashboard Display:**
+- Shows next scheduled temperature transition
+- Displays current temperature
+- Click anywhere on card to open full editor
+
+**Full Schedule Editor (Dialog):**
+- Configure Weekdays, Saturday, and Sunday schedules
+- Set 4 time periods per schedule group
+- Visual time and temperature controls
 
 ## Features
 

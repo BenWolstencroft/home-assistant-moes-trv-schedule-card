@@ -2,6 +2,6 @@
   "name": "MOES TRV Schedule Card",
   "render_readme": true,
   "filename": "moes-trv-schedule-card.js",
-  "country": ["GB", "US", "EU"],
+  "country": ["GB", "US", "DE", "FR", "IT", "ES", "NL", "BE", "PL", "SE", "DK", "NO", "FI", "AT", "CH", "IE"],
   "homeassistant": "2023.1.0"
 }

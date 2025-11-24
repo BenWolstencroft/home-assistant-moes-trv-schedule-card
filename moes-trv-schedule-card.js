@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.1.0
+ * Version: 1.2.0
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -19,7 +19,6 @@ class MoesTrvScheduleCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._config = {};
     this._schedule = this.getDefaultSchedule();
-    this._dialogOpen = false;
   }
 
   setConfig(config) {
@@ -225,421 +224,75 @@ class MoesTrvScheduleCard extends HTMLElement {
           color: var(--secondary-text-color);
           margin-top: 8px;
         }
-        .days-container {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-        .day-schedule {
-          border: 1px solid var(--divider-color);
-          border-radius: 8px;
-          padding: 12px;
-          background: var(--card-background-color);
-        }
-        .day-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-        }
-        .day-name {
-          font-weight: 500;
-          font-size: 1.1em;
-          flex: 1;
-        }
-        .day-description {
-          font-size: 0.85em;
-          color: var(--secondary-text-color);
-          margin-top: 4px;
-        }
-        .day-actions {
-          display: flex;
-          gap: 8px;
-        }
-        .icon-button {
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 4px;
-          color: var(--primary-text-color);
-          opacity: 0.6;
-          transition: opacity 0.2s;
-        }
-        .icon-button:hover {
-          opacity: 1;
-        }
-        .periods-container {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .period {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          padding: 8px;
-          background: var(--primary-background-color);
-          border-radius: 4px;
-        }
-        .period input[type="time"] {
-          flex: 1;
-          padding: 8px;
-          border: 1px solid var(--divider-color);
-          border-radius: 4px;
-          background: var(--card-background-color);
-          color: var(--primary-text-color);
-          font-size: 14px;
-        }
-        .period input[type="number"] {
-          width: 80px;
-          padding: 8px;
-          border: 1px solid var(--divider-color);
-          border-radius: 4px;
-          background: var(--card-background-color);
-          color: var(--primary-text-color);
-          text-align: center;
-          font-size: 14px;
-        }
-        .period .temp-unit {
-          font-size: 14px;
-          color: var(--secondary-text-color);
-        }
-        .period-limit-note {
-          margin-top: 8px;
-          padding: 8px;
-          background: var(--secondary-background-color);
-          border-radius: 4px;
-          font-size: 0.85em;
-          color: var(--secondary-text-color);
-          text-align: center;
-        }
-        .actions {
-          margin-top: 24px;
-          display: flex;
-          gap: 12px;
-          justify-content: flex-end;
-        }
-        .action-button {
-          padding: 12px 24px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          transition: opacity 0.2s;
-        }
-        .action-button.primary {
-          background: var(--primary-color);
-          color: var(--text-primary-color);
-        }
-        .action-button.secondary {
-          background: var(--secondary-background-color);
-          color: var(--primary-text-color);
-        }
-        .action-button:hover {
-          opacity: 0.8;
-        }
-        .collapsed .periods-container {
-          display: none;
-        }
-        .collapsed .period-limit-note {
-          display: none;
-        }
-        .status-message {
-          padding: 12px;
-          margin-top: 16px;
-          border-radius: 4px;
-          text-align: center;
-        }
-        .status-message.success {
-          background: var(--success-color, #4caf50);
-          color: white;
-        }
-        .status-message.error {
-          background: var(--error-color, #f44336);
-          color: white;
-        }
-        /* Dialog Styles */
-        .dialog-overlay {
-          display: ${this._dialogOpen ? 'flex' : 'none'};
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 1000;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-        }
-        .dialog-content {
-          background: var(--card-background-color);
-          border-radius: 8px;
-          max-width: 600px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-          width: 100%;
-        }
-        .dialog-header {
-          padding: 16px 20px;
-          border-bottom: 1px solid var(--divider-color);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .dialog-header h2 {
-          margin: 0;
-          font-size: 1.2em;
-        }
-        .dialog-close {
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 24px;
-          color: var(--primary-text-color);
-          opacity: 0.6;
-          padding: 0;
-          width: 32px;
-          height: 32px;
-          transition: opacity 0.2s;
-        }
-        .dialog-close:hover {
-          opacity: 1;
-        }
-        .dialog-body {
-          padding: 20px;
-        }
       </style>
       
-      <ha-card @click="${() => this._openDialog()}">
-        <div class="card-header">
-          <h2>TRV Schedule</h2>
-          <span class="edit-icon">✎</span>
-        </div>
-        
-        <div class="entity-info">
-          ${entityName}
-        </div>
-        
-        ${nextTransition ? `
-          <div class="next-transition">
-            <span class="next-label">${nextTransition.today ? 'Next:' : 'Tomorrow:'}</span>
-            <span class="next-time">${nextTransition.time}</span>
-            <span class="next-temp">${nextTransition.temp}°C</span>
+      <ha-card>
+        <div class="card-content">
+          <div class="header">
+            <div class="entity-name">${entityName}</div>
+            <span class="edit-icon">✎</span>
           </div>
-        ` : ''}
-        
-        ${currentTemp !== null ? `
-          <div class="current-temp">
-            Current: ${currentTemp}°C
-          </div>
-        ` : ''}
+          
+          ${nextTransition ? `
+            <div class="next-transition">
+              <span class="next-label">${nextTransition.today ? 'Next:' : 'Tomorrow:'}</span>
+              <span class="next-time">${nextTransition.time}</span>
+              <span class="next-temp">${nextTransition.temp}°C</span>
+            </div>
+          ` : ''}
+          
+          ${currentTemp !== null ? `
+            <div class="current-temp">
+              Current: ${currentTemp}°C
+            </div>
+          ` : ''}
+        </div>
       </ha-card>
-      
-      <div class="dialog-overlay" @click="${(e) => this._closeDialogOnBackdrop(e)}">
-        <div class="dialog-content" @click="${(e) => e.stopPropagation()}">
-          <div class="dialog-header">
-            <h2>Edit TRV Schedule</h2>
-            <button class="dialog-close" @click="${() => this._closeDialog()}">×</button>
-          </div>
-          <div class="dialog-body">
-            <div class="days-container">
-              ${this.renderDays()}
-            </div>
-            
-            <div class="actions">
-              <button class="action-button secondary" @click="${() => this.resetSchedule()}">
-                Reset to Default
-              </button>
-              <button class="action-button primary" @click="${() => this.saveSchedule()}">
-                Apply Schedule
-              </button>
-            </div>
-            
-            ${this._statusMessage ? `<div class="status-message ${this._statusType}">${this._statusMessage}</div>` : ''}
-          </div>
-        </div>
-      </div>
     `;
 
-    this.attachEventListeners();
-  }
-
-  _openDialog() {
-    this._dialogOpen = true;
-    this.render();
-  }
-
-  _closeDialog() {
-    this._dialogOpen = false;
-    this.render();
-  }
-
-  _closeDialogOnBackdrop(e) {
-    if (e.target.classList.contains('dialog-overlay')) {
-      this._closeDialog();
+    // Add click listener to open more-info dialog
+    const card = this.shadowRoot.querySelector('ha-card');
+    if (card) {
+      card.addEventListener('click', () => this._handleMoreInfo());
     }
   }
 
-  renderDays() {
-    const scheduleGroups = [
-      { key: 'weekdays', name: 'Weekdays', description: 'Monday - Friday' },
-      { key: 'saturday', name: 'Saturday', description: 'Saturday only' },
-      { key: 'sunday', name: 'Sunday', description: 'Sunday only' }
-    ];
-    
-    return scheduleGroups.map((group) => `
-      <div class="day-schedule" data-day="${group.key}">
-        <div class="day-header" data-day="${group.key}">
-          <div>
-            <div class="day-name">${group.name}</div>
-            <div class="day-description">${group.description}</div>
-          </div>
-          <div class="day-actions">
-            <button class="icon-button toggle-day" data-day="${group.key}" title="Expand/Collapse">
-              ▼
-            </button>
-          </div>
-        </div>
-        
-        <div class="periods-container" data-day="${group.key}">
-          ${this.renderPeriods(group.key)}
-        </div>
-        
-        <div class="period-limit-note">
-          MOES TRVs support exactly 4 periods per schedule group
-        </div>
-      </div>
-    `).join('');
-  }
-
-  renderPeriods(day) {
-    const periods = this._schedule[day] || [];
-    return periods.map((period, index) => `
-      <div class="period" data-day="${day}" data-index="${index}">
-        <input type="time" value="${period.time}" data-field="time" />
-        <input type="number" value="${period.temp}" min="5" max="35" step="0.5" data-field="temp" />
-        <span class="temp-unit">°C</span>
-        <button class="icon-button remove-period" title="Remove">
-          ✕
-        </button>
-      </div>
-    `).join('');
-  }
-
-  attachEventListeners() {
-    // Toggle day expansion
-    this.shadowRoot.querySelectorAll('.toggle-day').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const day = btn.dataset.day;
-        const daySchedule = this.shadowRoot.querySelector(`.day-schedule[data-day="${day}"]`);
-        daySchedule.classList.toggle('collapsed');
-        btn.textContent = daySchedule.classList.contains('collapsed') ? '▶' : '▼';
-      });
-    });
-
-    // Remove period
-    this.shadowRoot.querySelectorAll('.remove-period').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const period = btn.closest('.period');
-        const day = period.dataset.day;
-        const index = parseInt(period.dataset.index);
-        this.removePeriod(day, index);
-      });
-    });
-
-    // Update period values
-    this.shadowRoot.querySelectorAll('.period input').forEach(input => {
-      input.addEventListener('change', () => {
-        const period = input.closest('.period');
-        const day = period.dataset.day;
-        const index = parseInt(period.dataset.index);
-        const field = input.dataset.field;
-        const value = field === 'temp' ? parseFloat(input.value) : input.value;
-        this.updatePeriod(day, index, field, value);
-      });
-    });
-  }
-
-  removePeriod(day, index) {
-    // MOES TRVs require exactly 4 periods
-    this.showStatus('MOES TRVs require exactly 4 periods per schedule group', 'error');
-  }
-
-  updatePeriod(day, index, field, value) {
-    this._schedule[day][index][field] = value;
-  }
-
-  resetSchedule() {
-    this._schedule = this.getDefaultSchedule();
-    this.render();
-    this.showStatus('Schedule reset to defaults', 'success');
-  }
-
-  async saveSchedule() {
-    try {
-      // Format schedule for MOES TRV
-      const scheduleString = this.formatScheduleForEntity();
-      
-      // Determine the entity type and use appropriate service
-      const entity = this._hass.states[this._config.entity];
-      
-      if (!entity) {
-        throw new Error(`Entity ${this._config.entity} not found`);
+  _handleMoreInfo() {
+    // Fire event to show more-info dialog, like the thermostat card does
+    this.dispatchEvent(new CustomEvent('hass-more-info', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        entityId: this._config.entity
       }
+    }));
+    
+    // Also try the show-dialog event pattern
+    import('./moes-trv-schedule-card-more-info.js').then(() => {
+      const moreInfo = document.createElement('moes-trv-schedule-more-info');
+      moreInfo.setConfig(this._config);
+      moreInfo.hass = this._hass;
+      moreInfo.setSchedule(this._schedule);
       
-      // Check if it's a text entity (common for Zigbee MQTT devices)
-      if (this._config.entity.startsWith('text.')) {
-        await this._hass.callService('text', 'set_value', {
-          entity_id: this._config.entity,
-          value: scheduleString
-        });
-      } 
-      // Check if it's a climate entity with schedule attribute
-      else if (this._config.entity.startsWith('climate.')) {
-        // Try Tuya integration first
-        try {
-          await this._hass.callService('tuya', 'send_command', {
-            device_id: this._config.entity,
-            command: 'schedule',
-            params: scheduleString
-          });
-        } catch (tuyaError) {
-          // Fallback to generic climate service
-          await this._hass.callService('climate', 'set_schedule', {
-            entity_id: this._config.entity,
-            schedule: scheduleString
-          });
+      moreInfo.addEventListener('close-dialog', () => {
+        // Refresh schedule from entity when dialog closes
+        this.parseScheduleFromEntity();
+        this.render();
+      });
+      
+      this.dispatchEvent(new CustomEvent('show-dialog', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          dialogTag: 'moes-trv-schedule-dialog',
+          dialogImport: () => Promise.resolve(),
+          dialogParams: {
+            content: moreInfo,
+            title: 'TRV Schedule'
+          }
         }
-      }
-      // Generic fallback - try to set as an attribute or use text service
-      else {
-        await this._hass.callService('text', 'set_value', {
-          entity_id: this._config.entity,
-          value: scheduleString
-        });
-      }
-      
-      this.showStatus('Schedule applied successfully!', 'success');
-      console.info('Applied schedule to', this._config.entity, ':', scheduleString);
-    } catch (error) {
-      console.error('Error applying schedule:', error);
-      this.showStatus('Error applying schedule: ' + error.message, 'error');
-    }
-  }
-
-  showStatus(message, type) {
-    this._statusMessage = message;
-    this._statusType = type;
-    this.render();
-    
-    setTimeout(() => {
-      this._statusMessage = null;
-      this.render();
-    }, 3000);
+      }));
+    });
   }
 
   getCardSize() {
@@ -674,7 +327,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.1.0 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.2.0 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

@@ -1,0 +1,392 @@
+/**
+ * MOES TRV Schedule Card - More Info Dialog
+ * Popup dialog for editing TRV schedules
+ */
+
+class MoesTrvScheduleMoreInfo extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this._schedule = null;
+    this._statusMessage = null;
+    this._statusType = null;
+  }
+
+  setConfig(config) {
+    this._config = config;
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this.render();
+  }
+
+  setSchedule(schedule) {
+    this._schedule = JSON.parse(JSON.stringify(schedule));
+    this.render();
+  }
+
+  getSchedule() {
+    return this._schedule;
+  }
+
+  getDefaultSchedule() {
+    return {
+      weekdays: [
+        { time: '06:00', temp: 18 },
+        { time: '10:00', temp: 15 },
+        { time: '17:00', temp: 18 },
+        { time: '22:00', temp: 15 }
+      ],
+      saturday: [
+        { time: '06:00', temp: 15 },
+        { time: '10:00', temp: 15 },
+        { time: '17:00', temp: 15 },
+        { time: '22:00', temp: 15 }
+      ],
+      sunday: [
+        { time: '06:00', temp: 15 },
+        { time: '10:00', temp: 15 },
+        { time: '17:00', temp: 15 },
+        { time: '22:00', temp: 15 }
+      ]
+    };
+  }
+
+  formatScheduleForEntity() {
+    const parts = [];
+    ['weekdays', 'saturday', 'sunday'].forEach(day => {
+      this._schedule[day].forEach(period => {
+        parts.push(`${period.time}/${period.temp}°C`);
+      });
+    });
+    return parts.join('  ');
+  }
+
+  render() {
+    if (!this._hass || !this._config || !this._schedule) {
+      return;
+    }
+
+    const entity = this._hass.states[this._config.entity];
+    const entityName = entity ? entity.attributes.friendly_name || this._config.entity : this._config.entity;
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+        }
+        .container {
+          padding: 24px;
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+        .header {
+          margin-bottom: 24px;
+        }
+        .entity-name {
+          font-size: 1.5em;
+          font-weight: 500;
+          margin-bottom: 8px;
+        }
+        .entity-id {
+          font-size: 0.9em;
+          color: var(--secondary-text-color);
+        }
+        .days-container {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        .day-schedule {
+          border: 1px solid var(--divider-color);
+          border-radius: 8px;
+          padding: 12px;
+          background: var(--card-background-color);
+        }
+        .day-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          cursor: pointer;
+          user-select: none;
+        }
+        .day-info {
+          flex: 1;
+        }
+        .day-name {
+          font-weight: 500;
+          font-size: 1.1em;
+        }
+        .day-description {
+          font-size: 0.85em;
+          color: var(--secondary-text-color);
+          margin-top: 4px;
+        }
+        .toggle-icon {
+          font-size: 1.2em;
+          transition: transform 0.2s;
+        }
+        .day-schedule.collapsed .toggle-icon {
+          transform: rotate(-90deg);
+        }
+        .periods-container {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 12px;
+        }
+        .day-schedule.collapsed .periods-container {
+          display: none;
+        }
+        .period {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          padding: 8px;
+          background: var(--primary-background-color);
+          border-radius: 4px;
+        }
+        .period input[type="time"] {
+          flex: 1;
+          padding: 8px;
+          border: 1px solid var(--divider-color);
+          border-radius: 4px;
+          background: var(--card-background-color);
+          color: var(--primary-text-color);
+          font-size: 14px;
+        }
+        .period input[type="number"] {
+          width: 80px;
+          padding: 8px;
+          border: 1px solid var(--divider-color);
+          border-radius: 4px;
+          background: var(--card-background-color);
+          color: var(--primary-text-color);
+          text-align: center;
+          font-size: 14px;
+        }
+        .period .temp-unit {
+          font-size: 14px;
+          color: var(--secondary-text-color);
+        }
+        .period-limit-note {
+          margin-top: 8px;
+          padding: 8px;
+          background: var(--secondary-background-color);
+          border-radius: 4px;
+          font-size: 0.85em;
+          color: var(--secondary-text-color);
+          text-align: center;
+        }
+        .day-schedule.collapsed .period-limit-note {
+          display: none;
+        }
+        .actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+        }
+        .action-button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: opacity 0.2s;
+        }
+        .action-button.primary {
+          background: var(--primary-color);
+          color: var(--text-primary-color);
+        }
+        .action-button.secondary {
+          background: var(--secondary-background-color);
+          color: var(--primary-text-color);
+        }
+        .action-button:hover {
+          opacity: 0.8;
+        }
+        .status-message {
+          padding: 12px;
+          margin-top: 16px;
+          border-radius: 4px;
+          text-align: center;
+        }
+        .status-message.success {
+          background: var(--success-color, #4caf50);
+          color: white;
+        }
+        .status-message.error {
+          background: var(--error-color, #f44336);
+          color: white;
+        }
+      </style>
+      
+      <div class="container">
+        <div class="header">
+          <div class="entity-name">${entityName}</div>
+          <div class="entity-id">${this._config.entity}</div>
+        </div>
+        
+        <div class="days-container">
+          ${this.renderDays()}
+        </div>
+        
+        <div class="actions">
+          <button class="action-button secondary" id="reset-btn">
+            Reset to Default
+          </button>
+          <button class="action-button primary" id="apply-btn">
+            Apply Schedule
+          </button>
+        </div>
+        
+        ${this._statusMessage ? `<div class="status-message ${this._statusType}">${this._statusMessage}</div>` : ''}
+      </div>
+    `;
+
+    this.attachEventListeners();
+  }
+
+  renderDays() {
+    const scheduleGroups = [
+      { key: 'weekdays', name: 'Weekdays', description: 'Monday - Friday' },
+      { key: 'saturday', name: 'Saturday', description: 'Saturday only' },
+      { key: 'sunday', name: 'Sunday', description: 'Sunday only' }
+    ];
+    
+    return scheduleGroups.map((group) => `
+      <div class="day-schedule" data-day="${group.key}">
+        <div class="day-header" data-day="${group.key}">
+          <div class="day-info">
+            <div class="day-name">${group.name}</div>
+            <div class="day-description">${group.description}</div>
+          </div>
+          <span class="toggle-icon">▼</span>
+        </div>
+        
+        <div class="periods-container" data-day="${group.key}">
+          ${this.renderPeriods(group.key)}
+        </div>
+        
+        <div class="period-limit-note">
+          MOES TRVs support exactly 4 periods per schedule group
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderPeriods(day) {
+    const periods = this._schedule[day] || [];
+    return periods.map((period, index) => `
+      <div class="period" data-day="${day}" data-index="${index}">
+        <input type="time" value="${period.time}" data-field="time" />
+        <input type="number" value="${period.temp}" min="5" max="35" step="0.5" data-field="temp" />
+        <span class="temp-unit">°C</span>
+      </div>
+    `).join('');
+  }
+
+  attachEventListeners() {
+    // Toggle day expansion
+    this.shadowRoot.querySelectorAll('.day-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const day = header.dataset.day;
+        const daySchedule = this.shadowRoot.querySelector(`.day-schedule[data-day="${day}"]`);
+        daySchedule.classList.toggle('collapsed');
+      });
+    });
+
+    // Update period values
+    this.shadowRoot.querySelectorAll('.period input').forEach(input => {
+      input.addEventListener('change', () => {
+        const period = input.closest('.period');
+        const day = period.dataset.day;
+        const index = parseInt(period.dataset.index);
+        const field = input.dataset.field;
+        const value = field === 'temp' ? parseFloat(input.value) : input.value;
+        this._schedule[day][index][field] = value;
+      });
+    });
+
+    // Reset button
+    const resetBtn = this.shadowRoot.getElementById('reset-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => this.resetSchedule());
+    }
+
+    // Apply button
+    const applyBtn = this.shadowRoot.getElementById('apply-btn');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', () => this.saveSchedule());
+    }
+  }
+
+  resetSchedule() {
+    this._schedule = this.getDefaultSchedule();
+    this.render();
+    this.showStatus('Schedule reset to defaults', 'success');
+  }
+
+  async saveSchedule() {
+    try {
+      const scheduleString = this.formatScheduleForEntity();
+      const entity = this._hass.states[this._config.entity];
+      
+      if (!entity) {
+        throw new Error(`Entity ${this._config.entity} not found`);
+      }
+      
+      if (this._config.entity.startsWith('text.')) {
+        await this._hass.callService('text', 'set_value', {
+          entity_id: this._config.entity,
+          value: scheduleString
+        });
+      } else if (this._config.entity.startsWith('climate.')) {
+        try {
+          await this._hass.callService('tuya', 'send_command', {
+            device_id: this._config.entity,
+            command: 'schedule',
+            params: scheduleString
+          });
+        } catch (tuyaError) {
+          await this._hass.callService('climate', 'set_schedule', {
+            entity_id: this._config.entity,
+            schedule: scheduleString
+          });
+        }
+      } else {
+        await this._hass.callService('text', 'set_value', {
+          entity_id: this._config.entity,
+          value: scheduleString
+        });
+      }
+      
+      this.showStatus('Schedule applied successfully!', 'success');
+      
+      // Close dialog after 1 second
+      setTimeout(() => {
+        this.dispatchEvent(new CustomEvent('close-dialog'));
+      }, 1000);
+    } catch (error) {
+      console.error('Error applying schedule:', error);
+      this.showStatus('Error applying schedule: ' + error.message, 'error');
+    }
+  }
+
+  showStatus(message, type) {
+    this._statusMessage = message;
+    this._statusType = type;
+    this.render();
+    
+    setTimeout(() => {
+      this._statusMessage = null;
+      this.render();
+    }, 3000);
+  }
+}
+
+customElements.define('moes-trv-schedule-more-info', MoesTrvScheduleMoreInfo);

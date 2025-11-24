@@ -1,3 +1,23 @@
+## 1.2.0 (2025-11-24)
+
+### Features
+
+- **Native Home Assistant dialog** for schedule editing (like thermostat card behavior)
+- Separated schedule editor into dedicated more-info component
+- Improved dialog interaction patterns matching HA standards
+
+### Technical Improvements
+
+- Split card into main component (`moes-trv-schedule-card.js`) and dialog component (`moes-trv-schedule-card-more-info.js`)
+- Cleaner code architecture with separation of concerns
+- Reduced main card complexity and file size
+- Proper event handling with Home Assistant dialog system
+
+### Bug Fixes
+
+- Fixed dialog not opening on card click
+- Improved dialog behavior to match native HA components
+
 ## 1.1.0 (2025-11-24)
 
 ### Features

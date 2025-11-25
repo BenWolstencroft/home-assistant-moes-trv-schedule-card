@@ -1,3 +1,12 @@
+## 1.3.6 (2025-11-25)
+
+### Fixed
+
+- Fixed card editor not rendering in Lovelace UI
+- Added render() call in setConfig() method
+- Changed render guard to check for config instead of hass
+- Added label property to entity picker to fix translation errors
+
 ## 1.3.5 (2025-11-25)
 
 ### Fixed

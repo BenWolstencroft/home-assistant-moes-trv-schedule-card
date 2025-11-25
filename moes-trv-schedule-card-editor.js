@@ -11,6 +11,7 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
 
   setConfig(config) {
     this._config = config;
+    this.render();
   }
 
   set hass(hass) {
@@ -28,7 +29,7 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
   }
 
   render() {
-    if (!this._hass) {
+    if (!this._config) {
       return;
     }
 
@@ -94,7 +95,14 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
         
         <div class="config-row">
           <label for="entity-picker">MOES TRV Entity</label>
-          <div id="entity-picker-container"></div>
+          <ha-entity-picker
+            .hass="${this._hass}"
+            .value="${this._config.entity || ''}"
+            .label="Entity"
+            .includeDomains="${['climate', 'text']}"
+            .allowCustomEntity="${true}"
+            @value-changed="${this._entityChanged}"
+          ></ha-entity-picker>
           <div class="help-text">
             Select the schedule entity for your MOES TRV (climate entity or text entity for Zigbee/MQTT devices)
           </div>
@@ -185,25 +193,12 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
     this.attachEventListeners();
   }
 
-  attachEventListeners() {
-    // Create entity picker dynamically
-    const container = this.shadowRoot.getElementById('entity-picker-container');
-    if (container) {
-      const entityPicker = document.createElement('ha-entity-picker');
-      entityPicker.hass = this._hass;
-      entityPicker.value = this._config.entity || '';
-      entityPicker.label = 'Entity';
-      entityPicker.includeDomains = ['climate', 'text'];
-      entityPicker.allowCustomEntity = true;
-      
-      entityPicker.addEventListener('value-changed', (e) => {
-        this._config = { ...this._config, entity: e.detail.value };
-        this.configChanged(this._config);
-      });
-      
-      container.appendChild(entityPicker);
-    }
+  _entityChanged(e) {
+    this._config = { ...this._config, entity: e.detail.value };
+    this.configChanged(this._config);
+  }
 
+  attachEventListeners() {
     const titleInput = this.shadowRoot.getElementById('title-input');
     titleInput.addEventListener('change', (e) => {
       this._config = { ...this._config, title: e.target.value };

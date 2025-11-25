@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.3.5
+ * Version: 1.3.6
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -341,7 +341,7 @@ class MoesTrvScheduleCard extends HTMLElement {
           
           <div class="right-section">
             <div class="current-info">
-              <span class="current-label">Current:</span>
+              <span class="current-label">Now:</span>
               <span class="current-time">${currentSlot.time}</span>
               ${currentTemp !== null ? `<span class="current-temp-value">${currentTemp}°C</span>` : `<span class="current-temp-value">${currentSlot.temp}°C</span>`}
             </div>
@@ -457,7 +457,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.5 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.6 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

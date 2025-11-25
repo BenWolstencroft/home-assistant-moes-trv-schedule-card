@@ -1,6 +1,6 @@
 {
   "name": "MOES TRV Schedule Card",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Custom Lovelace card for managing weekly schedules on MOES Thermostatic Radiator Valves",
   "author": "Ben Wolstencroft",
   "license": "MIT",

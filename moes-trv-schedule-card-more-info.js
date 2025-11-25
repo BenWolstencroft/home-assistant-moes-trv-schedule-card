@@ -40,33 +40,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
     this.render();
   }
 
-  getSchedule() {
-    return this._schedule;
-  }
-
-  getDefaultSchedule() {
-    return {
-      weekdays: [
-        { time: '06:00', temp: 18 },
-        { time: '10:00', temp: 15 },
-        { time: '17:00', temp: 18 },
-        { time: '22:00', temp: 15 }
-      ],
-      saturday: [
-        { time: '06:00', temp: 15 },
-        { time: '10:00', temp: 15 },
-        { time: '17:00', temp: 15 },
-        { time: '22:00', temp: 15 }
-      ],
-      sunday: [
-        { time: '06:00', temp: 15 },
-        { time: '10:00', temp: 15 },
-        { time: '17:00', temp: 15 },
-        { time: '22:00', temp: 15 }
-      ]
-    };
-  }
-
   formatScheduleForEntity() {
     const parts = [];
     ['weekdays', 'saturday', 'sunday'].forEach(day => {
@@ -94,14 +67,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           padding: 24px;
           max-height: 80vh;
           overflow-y: auto;
-        }
-        .header {
-          margin-bottom: 24px;
-        }
-        .entity-name {
-          font-size: 1.5em;
-          font-weight: 500;
-          margin-bottom: 8px;
         }
         .days-container {
           display: flex;
@@ -219,18 +184,11 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       </style>
       
       <div class="container">
-        <div class="header">
-          <div class="entity-name">${entityName}</div>
-        </div>
-        
         <div class="days-container">
           ${this.renderDays()}
         </div>
         
         <div class="actions">
-          <button class="action-button secondary" id="reset-btn">
-            Reset to Default
-          </button>
           <button class="action-button primary" id="apply-btn">
             Apply Schedule
           </button>
@@ -309,23 +267,11 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       });
     });
 
-    // Reset button
-    const resetBtn = this.shadowRoot.getElementById('reset-btn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => this.resetSchedule());
-    }
-
     // Apply button
     const applyBtn = this.shadowRoot.getElementById('apply-btn');
     if (applyBtn) {
       applyBtn.addEventListener('click', () => this.saveSchedule());
     }
-  }
-
-  resetSchedule() {
-    this._schedule = this.getDefaultSchedule();
-    this.render();
-    this.showStatus('Schedule reset to defaults', 'success');
   }
 
   async saveSchedule() {

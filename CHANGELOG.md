@@ -1,3 +1,12 @@
+## 1.3.4 (2025-11-25)
+
+### Code Quality
+
+- Removed unused CSS classes and config options
+- Cleaned up stub config (removed unused show_current_temp, min_temp, max_temp, temp_step)
+- Fixed typo in event listener code
+- Further reduced component file size
+
 ## 1.3.3 (2025-11-25)
 
 ### Code Quality

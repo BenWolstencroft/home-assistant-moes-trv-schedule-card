@@ -103,10 +103,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           font-weight: 500;
           margin-bottom: 8px;
         }
-        .entity-id {
-          font-size: 0.9em;
-          color: var(--secondary-text-color);
-        }
         .days-container {
           display: flex;
           flex-direction: column;
@@ -133,11 +129,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
         .day-name {
           font-weight: 500;
           font-size: 1.1em;
-        }
-        .day-description {
-          font-size: 0.85em;
-          color: var(--secondary-text-color);
-          margin-top: 4px;
         }
         .toggle-icon {
           font-size: 1.2em;
@@ -186,18 +177,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           font-size: 14px;
           color: var(--secondary-text-color);
         }
-        .period-limit-note {
-          margin-top: 8px;
-          padding: 8px;
-          background: var(--secondary-background-color);
-          border-radius: 4px;
-          font-size: 0.85em;
-          color: var(--secondary-text-color);
-          text-align: center;
-        }
-        .day-schedule.collapsed .period-limit-note {
-          display: none;
-        }
         .actions {
           display: flex;
           gap: 12px;
@@ -242,7 +221,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       <div class="container">
         <div class="header">
           <div class="entity-name">${entityName}</div>
-          <div class="entity-id">${this._config.entity}</div>
         </div>
         
         <div class="days-container">
@@ -267,9 +245,9 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
 
   renderDays() {
     const scheduleGroups = [
-      { key: 'weekdays', name: 'Weekdays', description: 'Monday - Friday' },
-      { key: 'saturday', name: 'Saturday', description: 'Saturday only' },
-      { key: 'sunday', name: 'Sunday', description: 'Sunday only' }
+      { key: 'weekdays', name: 'Weekdays'},
+      { key: 'saturday', name: 'Saturday'},
+      { key: 'sunday', name: 'Sunday' }
     ];
     
     return scheduleGroups.map((group) => {
@@ -279,17 +257,12 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           <div class="day-header" data-day="${group.key}">
             <div class="day-info">
               <div class="day-name">${group.name}</div>
-              <div class="day-description">${group.description}</div>
             </div>
             <span class="toggle-icon">${isCollapsed ? '▶' : '▼'}</span>
           </div>
           
           <div class="periods-container" data-day="${group.key}">
             ${this.renderPeriods(group.key)}
-          </div>
-          
-          <div class="period-limit-note">
-            MOES TRVs support exactly 4 periods per schedule group
           </div>
         </div>
       `;

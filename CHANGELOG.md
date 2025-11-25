@@ -1,3 +1,11 @@
+## 1.3.3 (2025-11-25)
+
+### Code Quality
+
+- Removed unused CSS classes from more-info dialog component
+- Cleaned up styling for better maintainability
+- Reduced component file size
+
 ## 1.3.2 (2025-11-25)
 
 ### CI/CD

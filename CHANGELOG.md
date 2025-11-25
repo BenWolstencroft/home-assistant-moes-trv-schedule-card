@@ -1,3 +1,11 @@
+## 1.3.2 (2025-11-25)
+
+### CI/CD
+
+- Automated GitHub release creation on successful validation
+- Release notes automatically extracted from CHANGELOG.md
+- Proper version tagging for HACS compatibility
+
 ## 1.3.1 (2025-11-25)
 
 ### Documentation

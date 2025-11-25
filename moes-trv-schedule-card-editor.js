@@ -94,13 +94,7 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
         
         <div class="config-row">
           <label for="entity-picker">MOES TRV Entity</label>
-          <ha-entity-picker
-            id="entity-picker"
-            .hass="${this._hass}"
-            .value="${this._config.entity || ''}"
-            .includeDomains="${['climate', 'text']}"
-            allow-custom-entity
-          ></ha-entity-picker>
+          <div id="entity-picker-container"></div>
           <div class="help-text">
             Select the schedule entity for your MOES TRV (climate entity or text entity for Zigbee/MQTT devices)
           </div>
@@ -192,12 +186,22 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
   }
 
   attachEventListeners() {
-    const entityPicker = this.shadowRoot.getElementById('entity-picker');
-    if (entityPicker) {
+    // Create entity picker dynamically
+    const container = this.shadowRoot.getElementById('entity-picker-container');
+    if (container) {
+      const entityPicker = document.createElement('ha-entity-picker');
+      entityPicker.hass = this._hass;
+      entityPicker.value = this._config.entity || '';
+      entityPicker.label = 'Entity';
+      entityPicker.includeDomains = ['climate', 'text'];
+      entityPicker.allowCustomEntity = true;
+      
       entityPicker.addEventListener('value-changed', (e) => {
         this._config = { ...this._config, entity: e.detail.value };
         this.configChanged(this._config);
       });
+      
+      container.appendChild(entityPicker);
     }
 
     const titleInput = this.shadowRoot.getElementById('title-input');

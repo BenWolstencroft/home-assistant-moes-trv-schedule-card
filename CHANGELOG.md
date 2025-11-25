@@ -1,3 +1,11 @@
+## 1.3.5 (2025-11-25)
+
+### Fixed
+
+- Fixed entity picker not displaying in card editor
+- Changed to dynamic element creation for proper ha-entity-picker rendering
+- Entity selector now works correctly in Shadow DOM
+
 ## 1.3.4 (2025-11-25)
 
 ### Code Quality

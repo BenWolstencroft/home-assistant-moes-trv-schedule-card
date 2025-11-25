@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.2.0
+ * Version: 1.2.1
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -253,21 +253,14 @@ class MoesTrvScheduleCard extends HTMLElement {
     // Add click listener to open more-info dialog
     const card = this.shadowRoot.querySelector('ha-card');
     if (card) {
-      card.addEventListener('click', () => this._handleMoreInfo());
+      card.addEventListener('click', (e) => this._handleMoreInfo(e));
     }
   }
 
-  _handleMoreInfo() {
-    // Fire event to show more-info dialog, like the thermostat card does
-    this.dispatchEvent(new CustomEvent('hass-more-info', {
-      bubbles: true,
-      composed: true,
-      detail: {
-        entityId: this._config.entity
-      }
-    }));
+  _handleMoreInfo(e) {
+    e.stopPropagation();
     
-    // Also try the show-dialog event pattern
+    // Import and show custom schedule editor dialog
     import('./moes-trv-schedule-card-more-info.js').then(() => {
       const moreInfo = document.createElement('moes-trv-schedule-more-info');
       moreInfo.setConfig(this._config);
@@ -280,15 +273,16 @@ class MoesTrvScheduleCard extends HTMLElement {
         this.render();
       });
       
+      // Use Home Assistant's dialog system
       this.dispatchEvent(new CustomEvent('show-dialog', {
         bubbles: true,
         composed: true,
         detail: {
-          dialogTag: 'moes-trv-schedule-dialog',
-          dialogImport: () => Promise.resolve(),
+          dialogTag: 'ha-dialog',
+          dialogImport: () => import('https://unpkg.com/@polymer/paper-dialog@3.0.1/paper-dialog.js?module'),
           dialogParams: {
             content: moreInfo,
-            title: 'TRV Schedule'
+            title: 'Edit TRV Schedule'
           }
         }
       }));
@@ -327,7 +321,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.2.0 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.2.1 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

@@ -1,3 +1,11 @@
+## 1.2.1 (2025-11-24)
+
+### Bug Fixes
+
+- Fixed custom dialog not opening when clicking card (was opening default entity more-info instead)
+- Added event propagation stopping to prevent conflicts with default HA behaviors
+- Improved dialog event handling for proper custom schedule editor display
+
 ## 1.2.0 (2025-11-24)
 
 ### Features

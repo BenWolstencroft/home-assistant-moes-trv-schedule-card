@@ -1,3 +1,21 @@
+## 1.3.0 (2025-11-25)
+
+### Features
+
+- **Redesigned compact card layout** with improved information density
+- **Current schedule slot display** showing when the current temperature period started
+- **Left-right layout**: Entity name on left, schedule info on right
+- Better use of typography with bold weights for key information
+- Theme color integration for temperatures and highlights
+
+### Improvements
+
+- Normalized font sizes for cleaner appearance
+- Reduced padding for more compact dashboard footprint
+- Improved visual hierarchy with strategic use of bold text
+- Better alignment and spacing using flexbox
+- Shows both current slot start time and current/target temperature
+
 ## 1.2.3 (2025-11-25)
 
 ### Features

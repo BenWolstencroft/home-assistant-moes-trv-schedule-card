@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.2.3
+ * Version: 1.3.0
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -160,6 +160,35 @@ class MoesTrvScheduleCard extends HTMLElement {
     return null;
   }
 
+  getCurrentSlot() {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    let scheduleKey;
+    if (currentDay === 0) {
+      scheduleKey = 'sunday';
+    } else if (currentDay === 6) {
+      scheduleKey = 'saturday';
+    } else {
+      scheduleKey = 'weekdays';
+    }
+    
+    const todaySchedule = this._schedule[scheduleKey];
+    
+    // Find the current slot (last period that has started)
+    let currentSlot = todaySchedule[0]; // Default to first period
+    for (const period of todaySchedule) {
+      if (period.time <= currentTime) {
+        currentSlot = period;
+      } else {
+        break;
+      }
+    }
+    
+    return { time: currentSlot.time, temp: currentSlot.temp };
+  }
+
   render() {
     if (!this._hass || !this._config.entity) {
       return;
@@ -169,6 +198,7 @@ class MoesTrvScheduleCard extends HTMLElement {
     const entityName = entity ? entity.attributes.friendly_name || this._config.entity : this._config.entity;
     const nextTransition = this.getNextTransition();
     const currentTemp = this.getCurrentTemp();
+    const currentSlot = this.getCurrentSlot();
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -183,47 +213,59 @@ class MoesTrvScheduleCard extends HTMLElement {
           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         .card-content {
-          padding: 16px;
-        }
-        .header {
+          padding: 12px 16px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 12px;
+          gap: 16px;
+        }
+        .left-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         .entity-name {
-          font-size: 1.1em;
+          font-size: 1em;
           font-weight: 500;
           color: var(--primary-text-color);
         }
-        .edit-icon {
-          opacity: 0.6;
-          font-size: 20px;
+        .right-section {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
         }
-        .next-transition {
+        .current-info {
+          font-size: 0.9em;
+          color: var(--secondary-text-color);
+        }
+        .current-label {
+          font-weight: 500;
+        }
+        .current-time {
+          color: var(--primary-text-color);
+        }
+        .current-temp-value {
+          font-weight: 700;
+          color: var(--primary-color);
+        }
+        .next-info {
           display: flex;
           align-items: baseline;
-          gap: 12px;
-          margin-top: 8px;
+          gap: 6px;
+          font-size: 0.9em;
         }
         .next-label {
-          font-size: 0.9em;
+          font-weight: 500;
           color: var(--secondary-text-color);
         }
         .next-time {
-          font-size: 1.8em;
-          font-weight: 500;
-          color: var(--primary-color);
-        }
-        .next-temp {
-          font-size: 1.5em;
-          font-weight: 500;
+          font-weight: 700;
           color: var(--primary-text-color);
         }
-        .current-temp {
-          font-size: 0.9em;
-          color: var(--secondary-text-color);
-          margin-top: 8px;
+        .next-temp {
+          font-weight: 700;
+          color: var(--primary-color);
         }
         
         /* Dialog Overlay */
@@ -293,24 +335,25 @@ class MoesTrvScheduleCard extends HTMLElement {
       
       <ha-card>
         <div class="card-content">
-          <div class="header">
+          <div class="left-section">
             <div class="entity-name">${entityName}</div>
-            <span class="edit-icon">✎</span>
           </div>
           
-          ${nextTransition ? `
-            <div class="next-transition">
-              <span class="next-label">${nextTransition.today ? 'Next:' : 'Tomorrow:'}</span>
-              <span class="next-time">${nextTransition.time}</span>
-              <span class="next-temp">${nextTransition.temp}°C</span>
+          <div class="right-section">
+            <div class="current-info">
+              <span class="current-label">Current:</span>
+              <span class="current-time">${currentSlot.time}</span>
+              ${currentTemp !== null ? `<span class="current-temp-value">${currentTemp}°C</span>` : `<span class="current-temp-value">${currentSlot.temp}°C</span>`}
             </div>
-          ` : ''}
-          
-          ${currentTemp !== null ? `
-            <div class="current-temp">
-              Current: ${currentTemp}°C
-            </div>
-          ` : ''}
+            
+            ${nextTransition ? `
+              <div class="next-info">
+                <span class="next-label">${nextTransition.today ? 'Next:' : 'Tomorrow:'}</span>
+                <span class="next-time">${nextTransition.time}</span>
+                <span class="next-temp">${nextTransition.temp}°C</span>
+              </div>
+            ` : ''}
+          </div>
         </div>
       </ha-card>
       
@@ -418,7 +461,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.2.3 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.0 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

@@ -1,3 +1,17 @@
+## 1.2.3 (2025-11-25)
+
+### Features
+
+- **Accordion behavior** for schedule groups - only one panel can be open at a time
+- **Smart default panel** - dialog opens with current day's schedule visible (weekday/Saturday/Sunday)
+- Improved user experience with focused schedule editing
+
+### Improvements
+
+- Better navigation between schedule groups
+- Reduced visual clutter in dialog
+- Clearer indication of active schedule group
+
 ## 1.2.2 (2025-11-25)
 
 ### Bug Fixes

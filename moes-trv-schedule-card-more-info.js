@@ -10,6 +10,20 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
     this._schedule = null;
     this._statusMessage = null;
     this._statusType = null;
+    this._openDay = this.getCurrentDayKey(); // Default to current day
+  }
+
+  getCurrentDayKey() {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    if (dayOfWeek === 0) {
+      return 'sunday';
+    } else if (dayOfWeek === 6) {
+      return 'saturday';
+    } else {
+      return 'weekdays';
+    }
   }
 
   setConfig(config) {
@@ -258,25 +272,28 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       { key: 'sunday', name: 'Sunday', description: 'Sunday only' }
     ];
     
-    return scheduleGroups.map((group) => `
-      <div class="day-schedule" data-day="${group.key}">
-        <div class="day-header" data-day="${group.key}">
-          <div class="day-info">
-            <div class="day-name">${group.name}</div>
-            <div class="day-description">${group.description}</div>
+    return scheduleGroups.map((group) => {
+      const isCollapsed = this._openDay !== group.key;
+      return `
+        <div class="day-schedule ${isCollapsed ? 'collapsed' : ''}" data-day="${group.key}">
+          <div class="day-header" data-day="${group.key}">
+            <div class="day-info">
+              <div class="day-name">${group.name}</div>
+              <div class="day-description">${group.description}</div>
+            </div>
+            <span class="toggle-icon">${isCollapsed ? '▶' : '▼'}</span>
           </div>
-          <span class="toggle-icon">▼</span>
+          
+          <div class="periods-container" data-day="${group.key}">
+            ${this.renderPeriods(group.key)}
+          </div>
+          
+          <div class="period-limit-note">
+            MOES TRVs support exactly 4 periods per schedule group
+          </div>
         </div>
-        
-        <div class="periods-container" data-day="${group.key}">
-          ${this.renderPeriods(group.key)}
-        </div>
-        
-        <div class="period-limit-note">
-          MOES TRVs support exactly 4 periods per schedule group
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   renderPeriods(day) {
@@ -291,12 +308,19 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
   }
 
   attachEventListeners() {
-    // Toggle day expansion
+    // Toggle day expansion - accordion style (only one open at a time)
     this.shadowRoot.querySelectorAll('.day-header').forEach(header => {
       header.addEventListener('click', () => {
         const day = header.dataset.day;
-        const daySchedule = this.shadowRoot.querySelector(`.day-schedule[data-day="${day}"]`);
-        daySchedule.classList.toggle('collapsed');
+        
+        // If clicking already open panel, do nothing
+        if (this._openDay === day) {
+          return;
+        }
+        
+        // Update which day is open and re-render
+        this._openDay = day;
+        this.render();
       });
     });
 

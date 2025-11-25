@@ -32,20 +32,37 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Check if tag exists
+      - name: Check if release exists
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        id: check_tag
+        id: check_release
         run: |
-          if git ls-remote --tags origin | grep -q "refs/tags/v${{ steps.get_version.outputs.version }}"; then
+          if gh release view v${{ steps.get_version.outputs.version }} &> /dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          GH_TOKEN: ${{ github.token }}
 
-      - name: Create and push tag
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.check_tag.outputs.exists == 'false'
+      - name: Extract changelog for current version
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.check_release.outputs.exists == 'false'
+        id: changelog
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a v${{ steps.get_version.outputs.version }} -m "Release v${{ steps.get_version.outputs.version }}"
-          git push origin v${{ steps.get_version.outputs.version }}
+          VERSION=${{ steps.get_version.outputs.version }}
+          # Extract the changelog section for the current version
+          CHANGELOG=$(sed -n "/## $VERSION/,/## [0-9]/p" CHANGELOG.md | sed '$d' | tail -n +2)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.check_release.outputs.exists == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: v${{ steps.get_version.outputs.version }}
+          body: ${{ steps.changelog.outputs.notes }}
+          draft: false
+          prerelease: false

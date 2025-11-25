@@ -1,3 +1,18 @@
+## 1.2.2 (2025-11-25)
+
+### Bug Fixes
+
+- Replaced complex polymer dialog system with simple custom overlay to avoid DOM conflicts
+- Fixed CustomElementRegistry errors ("dom-module" already registered)
+- Fixed 404 errors from attempting to load scoped-custom-element-registry
+- Improved dialog stability and compatibility
+
+### Technical Changes
+
+- Simplified dialog implementation using native CSS and DOM manipulation
+- Removed dependencies on external polymer/paper-dialog libraries
+- Better browser compatibility
+
 ## 1.2.1 (2025-11-24)
 
 ### Bug Fixes

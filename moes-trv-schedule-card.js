@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.2.1
+ * Version: 1.2.2
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -19,6 +19,7 @@ class MoesTrvScheduleCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._config = {};
     this._schedule = this.getDefaultSchedule();
+    this._showDialog = false;
   }
 
   setConfig(config) {
@@ -224,6 +225,70 @@ class MoesTrvScheduleCard extends HTMLElement {
           color: var(--secondary-text-color);
           margin-top: 8px;
         }
+        
+        /* Dialog Overlay */
+        .dialog-overlay {
+          display: ${this._showDialog ? 'block' : 'none'};
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          z-index: 1000;
+        }
+        .dialog-container {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: var(--card-background-color);
+          border-radius: 8px;
+          max-width: 600px;
+          width: 90%;
+          max-height: 90vh;
+          overflow: hidden;
+          z-index: 1001;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .dialog-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--divider-color);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--primary-background-color);
+        }
+        .dialog-title {
+          margin: 0;
+          font-size: 1.3em;
+          font-weight: 500;
+        }
+        .dialog-close {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 28px;
+          color: var(--primary-text-color);
+          opacity: 0.6;
+          padding: 0;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          transition: all 0.2s;
+        }
+        .dialog-close:hover {
+          opacity: 1;
+          background: var(--secondary-background-color);
+        }
+        .dialog-body {
+          padding: 20px;
+          overflow-y: auto;
+          max-height: calc(90vh - 80px);
+        }
       </style>
       
       <ha-card>
@@ -248,45 +313,77 @@ class MoesTrvScheduleCard extends HTMLElement {
           ` : ''}
         </div>
       </ha-card>
+      
+      ${this._showDialog ? `
+        <div class="dialog-overlay" id="dialog-overlay">
+          <div class="dialog-container">
+            <div class="dialog-header">
+              <h2 class="dialog-title">Edit TRV Schedule</h2>
+              <button class="dialog-close" id="close-dialog">×</button>
+            </div>
+            <div class="dialog-body">
+              <div id="dialog-content"></div>
+            </div>
+          </div>
+        </div>
+      ` : ''}
     `;
 
-    // Add click listener to open more-info dialog
+    // Add click listener to open dialog
     const card = this.shadowRoot.querySelector('ha-card');
     if (card) {
       card.addEventListener('click', (e) => this._handleMoreInfo(e));
+    }
+
+    // Add dialog close handlers
+    if (this._showDialog) {
+      const overlay = this.shadowRoot.getElementById('dialog-overlay');
+      const closeBtn = this.shadowRoot.getElementById('close-dialog');
+      
+      if (overlay) {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            this._closeDialog();
+          }
+        });
+      }
+      
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => this._closeDialog());
+      }
+
+      // Load the schedule editor content
+      import('./moes-trv-schedule-card-more-info.js').then(() => {
+        const dialogContent = this.shadowRoot.getElementById('dialog-content');
+        if (dialogContent) {
+          const moreInfo = document.createElement('moes-trv-schedule-more-info');
+          moreInfo.setConfig(this._config);
+          moreInfo.hass = this._hass;
+          moreInfo.setSchedule(this._schedule);
+          
+          moreInfo.addEventListener('close-dialog', () => {
+            this._closeDialog();
+          });
+          
+          dialogContent.appendChild(moreInfo);
+        }
+      });
     }
   }
 
   _handleMoreInfo(e) {
     e.stopPropagation();
     
-    // Import and show custom schedule editor dialog
-    import('./moes-trv-schedule-card-more-info.js').then(() => {
-      const moreInfo = document.createElement('moes-trv-schedule-more-info');
-      moreInfo.setConfig(this._config);
-      moreInfo.hass = this._hass;
-      moreInfo.setSchedule(this._schedule);
-      
-      moreInfo.addEventListener('close-dialog', () => {
-        // Refresh schedule from entity when dialog closes
-        this.parseScheduleFromEntity();
-        this.render();
-      });
-      
-      // Use Home Assistant's dialog system
-      this.dispatchEvent(new CustomEvent('show-dialog', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          dialogTag: 'ha-dialog',
-          dialogImport: () => import('https://unpkg.com/@polymer/paper-dialog@3.0.1/paper-dialog.js?module'),
-          dialogParams: {
-            content: moreInfo,
-            title: 'Edit TRV Schedule'
-          }
-        }
-      }));
-    });
+    // Create and show dialog overlay
+    this._showDialog = true;
+    this.render();
+  }
+
+  _closeDialog() {
+    this._showDialog = false;
+    // Refresh schedule from entity when dialog closes
+    this.parseScheduleFromEntity();
+    this.render();
   }
 
   getCardSize() {
@@ -321,7 +418,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.2.1 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.2.2 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

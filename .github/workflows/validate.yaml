@@ -2,6 +2,8 @@ name: Validate
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -17,3 +19,29 @@ jobs:
         uses: hacs/action@main
         with:
           category: plugin
+
+      - name: Extract version from package.json
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/v${{ steps.get_version.outputs.version }}"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a v${{ steps.get_version.outputs.version }} -m "Release v${{ steps.get_version.outputs.version }}"
+          git push origin v${{ steps.get_version.outputs.version }}

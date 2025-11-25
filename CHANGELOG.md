@@ -1,3 +1,11 @@
+## 1.3.1 (2025-11-25)
+
+### Documentation
+
+- Added screenshots to README (compact view in light/dark themes, editor dialog)
+- Improved documentation structure with visual examples
+- Meets HACS validation requirements for images
+
 ## 1.3.0 (2025-11-25)
 
 ### Features

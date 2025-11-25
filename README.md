@@ -2,24 +2,33 @@
 
 A custom Home Assistant Lovelace card for managing weekly heating schedules on MOES Thermostatic Radiator Valves (TRVs).
 
-![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2023.1%2B-green.svg)
 ![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-## Preview
+## Screenshots
 
-![MOES TRV Schedule Card Compact View](https://img.shields.io/badge/Preview-Click%20to%20Edit-blue?style=for-the-badge)
+### Compact Card View
 
-**Compact Dashboard Display:**
-- Shows next scheduled temperature transition
-- Displays current temperature
-- Click anywhere on card to open full editor
+The card displays a compact summary of your TRV schedule, showing the current slot and next transition.
 
-**Full Schedule Editor (Dialog):**
-- Configure Weekdays, Saturday, and Sunday schedules
-- Set 4 time periods per schedule group
-- Visual time and temperature controls
+| Light Theme | Dark Theme |
+|-------------|------------|
+| ![Compact View - Light](compact-light.png) | ![Compact View - Dark](compact-dark.png) |
+
+### Schedule Editor Dialog
+
+Click the card to open the full schedule editor with accordion-style day panels.
+
+![Schedule Editor - Dark Theme](editor-dark.png)
+
+**Features:**
+- **Compact Dashboard Display:** Shows current schedule slot time, temperature, and next transition
+- **Click-to-Edit:** Click anywhere on card to open the full editor
+- **Full Schedule Editor (Dialog):** Configure Weekdays, Saturday, and Sunday schedules with 4 time periods each
+- **Accordion Interface:** Only one day panel open at a time for focused editing
+- **Smart Defaults:** Opens with current day's schedule visible
 
 ## Features
 

@@ -119,8 +119,7 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           background: var(--primary-background-color);
           border-radius: 4px;
         }
-        .period input[type="time"] {
-          flex: 1;
+        .period input {
           padding: 8px;
           border: 1px solid var(--divider-color);
           border-radius: 4px;
@@ -128,15 +127,12 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           color: var(--primary-text-color);
           font-size: 14px;
         }
+        .period input[type="time"] {
+          flex: 1;
+        }
         .period input[type="number"] {
           width: 80px;
-          padding: 8px;
-          border: 1px solid var(--divider-color);
-          border-radius: 4px;
-          background: var(--card-background-color);
-          color: var(--primary-text-color);
           text-align: center;
-          font-size: 14px;
         }
         .period .temp-unit {
           font-size: 14px;

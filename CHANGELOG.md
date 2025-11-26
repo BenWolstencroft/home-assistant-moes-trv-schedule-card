@@ -1,3 +1,10 @@
+## 1.3.8 (2025-11-26)
+
+### Code Quality
+
+- Consolidated duplicate input styles in more-info dialog
+- Reduced CSS duplication by extracting common properties to shared selectors
+
 ## 1.3.7 (2025-11-26)
 
 ### Fixed

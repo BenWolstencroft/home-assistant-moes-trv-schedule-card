@@ -1,3 +1,10 @@
+## 1.3.9 (2025-11-26)
+
+### Fixed
+
+- Fixed constant re-rendering making schedule editing impossible
+- Prevented render() calls when dialog is open to stop UI interruptions
+
 ## 1.3.8 (2025-11-26)
 
 ### Code Quality

@@ -1,3 +1,14 @@
+## 1.3.11 (2025-11-26)
+
+### Fixed
+
+- Current temperature now displays scheduled temperature instead of device's actual temperature
+- Card title now respects config 'title' option, falling back to entity friendly name or ID
+
+### Changed
+
+- Removed unused getCurrentTemp() function
+
 ## 1.3.10 (2025-11-26)
 
 ### Improved

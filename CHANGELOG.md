@@ -1,3 +1,17 @@
+## 1.3.12 (2025-11-26)
+
+### Fixed
+
+- Fixed 'climate.set_schedule not found' error when saving schedules
+- Schedule save logic now properly detects where schedule was retrieved from
+- For climate entities with schedule attribute, automatically finds and updates underlying text entity
+- Added clear error messages when no writable entity can be found
+
+### Changed
+
+- Removed invalid climate.set_schedule service call (doesn't exist in Home Assistant)
+- Save logic now mirrors retrieval logic: checks attribute first, then text entity state
+
 ## 1.3.11 (2025-11-26)
 
 ### Fixed

@@ -55,9 +55,6 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       return;
     }
 
-    const entity = this._hass.states[this._config.entity];
-    const entityName = entity ? entity.attributes.friendly_name || this._config.entity : this._config.entity;
-
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -279,29 +276,49 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
         throw new Error(`Entity ${this._config.entity} not found`);
       }
       
-      if (this._config.entity.startsWith('text.')) {
+      // Determine where the schedule came from to know how to set it
+      const hasScheduleAttribute = entity.attributes && entity.attributes.schedule !== undefined;
+      const isTextEntity = this._config.entity.startsWith('text.');
+      
+      if (isTextEntity && !hasScheduleAttribute) {
+        // Text entity where schedule is in the state
         await this._hass.callService('text', 'set_value', {
           entity_id: this._config.entity,
           value: scheduleString
         });
-      } else if (this._config.entity.startsWith('climate.')) {
-        try {
-          await this._hass.callService('tuya', 'send_command', {
-            device_id: this._config.entity,
-            command: 'schedule',
-            params: scheduleString
-          });
-        } catch (tuyaError) {
-          await this._hass.callService('climate', 'set_schedule', {
-            entity_id: this._config.entity,
-            schedule: scheduleString
-          });
+      } else if (hasScheduleAttribute) {
+        // Schedule is in an attribute - need to find the source entity
+        // For climate entities with schedule attribute, look for the underlying text entity
+        if (this._config.entity.startsWith('climate.')) {
+          // Try to find associated text entity
+          const entityName = this._config.entity.split('.')[1];
+          const textEntityPatterns = [
+            `text.${entityName}_schedule`,
+            `text.${entityName}`,
+            `text.${entityName.replace('_trv', '')}_schedule`
+          ];
+          
+          let targetTextEntity = null;
+          for (const pattern of textEntityPatterns) {
+            if (this._hass.states[pattern]) {
+              targetTextEntity = pattern;
+              break;
+            }
+          }
+          
+          if (targetTextEntity) {
+            await this._hass.callService('text', 'set_value', {
+              entity_id: targetTextEntity,
+              value: scheduleString
+            });
+          } else {
+            throw new Error(`Cannot update schedule for ${this._config.entity}. No writable text entity found for schedule attribute.`);
+          }
+        } else {
+          throw new Error(`Cannot update schedule attribute for ${this._config.entity}. Attributes are read-only.`);
         }
       } else {
-        await this._hass.callService('text', 'set_value', {
-          entity_id: this._config.entity,
-          value: scheduleString
-        });
+        throw new Error(`No schedule data found for ${this._config.entity}. Entity must have either a 'schedule' attribute or be a text entity.`);
       }
       
       this.showStatus('Schedule applied successfully!', 'success');

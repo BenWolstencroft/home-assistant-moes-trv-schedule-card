@@ -1,3 +1,10 @@
+## 1.3.10 (2025-11-26)
+
+### Improved
+
+- Reduced card content padding for more compact display (12px → 10px)
+- Added text-wrap: nowrap and text-overflow: ellipsis to entity name to prevent wrapping
+
 ## 1.3.9 (2025-11-26)
 
 ### Fixed

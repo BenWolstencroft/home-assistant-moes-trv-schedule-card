@@ -1,3 +1,10 @@
+## 1.3.13 (2025-11-26)
+
+### Improved
+
+- Removed card hover effects (cursor and box-shadow) for cleaner appearance
+- Card now has consistent styling without interactive hover states
+
 ## 1.3.12 (2025-11-26)
 
 ### Fixed

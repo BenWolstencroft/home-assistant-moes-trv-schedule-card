@@ -1,3 +1,14 @@
+## 1.3.7 (2025-11-26)
+
+### Fixed
+
+- Fixed dialog UI resetting when schedule data refreshes
+- Paused schedule data updates while more info dialog is open
+
+### Improved
+
+- Reduced whitespace between current and next transition rows for more compact display
+
 ## 1.3.6 (2025-11-25)
 
 ### Fixed

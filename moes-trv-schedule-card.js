@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.3.6
+ * Version: 1.3.7
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -32,16 +32,19 @@ class MoesTrvScheduleCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     
-    // Get current schedule from entity if available
-    const entity = hass.states[this._config.entity];
-    if (entity) {
-      // Try to get schedule from attribute first
-      if (entity.attributes.schedule) {
-        this.parseScheduleFromEntity(entity.attributes.schedule);
-      }
-      // For text entities, the schedule is the state itself
-      else if (this._config.entity.startsWith('text.') && entity.state && entity.state !== 'unknown') {
-        this.parseScheduleFromEntity(entity.state);
+    // Don't refresh schedule data if dialog is open to prevent UI resets
+    if (!this._showDialog) {
+      // Get current schedule from entity if available
+      const entity = hass.states[this._config.entity];
+      if (entity) {
+        // Try to get schedule from attribute first
+        if (entity.attributes.schedule) {
+          this.parseScheduleFromEntity(entity.attributes.schedule);
+        }
+        // For text entities, the schedule is the state itself
+        else if (this._config.entity.startsWith('text.') && entity.state && entity.state !== 'unknown') {
+          this.parseScheduleFromEntity(entity.state);
+        }
       }
     }
     
@@ -233,7 +236,7 @@ class MoesTrvScheduleCard extends HTMLElement {
           display: flex;
           flex-direction: column;
           align-items: flex-end;
-          gap: 4px;
+          gap: 1px;
         }
         .current-info {
           font-size: 0.9em;
@@ -457,7 +460,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.6 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.7 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

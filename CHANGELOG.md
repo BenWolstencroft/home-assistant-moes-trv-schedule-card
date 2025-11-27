@@ -1,3 +1,10 @@
+## 1.3.14 (2025-11-27)
+
+### Fixed
+
+- Fixed missing :host style declaration causing card to not render
+- Restored critical Shadow DOM styles for proper custom element display
+
 ## 1.3.13 (2025-11-26)
 
 ### Improved

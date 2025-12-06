@@ -3,7 +3,7 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.3.14
+ * Version: 1.3.15
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
@@ -179,14 +179,29 @@ class MoesTrvScheduleCard extends HTMLElement {
     
     const todaySchedule = this._schedule[scheduleKey];
     
-    // Find the current slot (last period that has started)
-    let currentSlot = todaySchedule[0]; // Default to first period
+    // Find the current slot (last period that has started today)
+    let currentSlot = null;
     for (const period of todaySchedule) {
       if (period.time <= currentTime) {
         currentSlot = period;
-      } else {
-        break;
       }
+    }
+    
+    // If no period has started today, use the last period from yesterday
+    if (!currentSlot) {
+      let yesterdayKey;
+      if (currentDay === 0) { // Sunday - yesterday was Saturday
+        yesterdayKey = 'saturday';
+      } else if (currentDay === 1) { // Monday - yesterday was Sunday
+        yesterdayKey = 'sunday';
+      } else if (currentDay === 6) { // Saturday - yesterday was Friday (weekday)
+        yesterdayKey = 'weekdays';
+      } else { // Other weekdays - yesterday was weekday
+        yesterdayKey = 'weekdays';
+      }
+      
+      const yesterdaySchedule = this._schedule[yesterdayKey];
+      currentSlot = yesterdaySchedule[yesterdaySchedule.length - 1]; // Last period of yesterday
     }
     
     return { time: currentSlot.time, temp: currentSlot.temp };
@@ -454,7 +469,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.14 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.15 ',,
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

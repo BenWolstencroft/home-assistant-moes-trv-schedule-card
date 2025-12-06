@@ -1,3 +1,12 @@
+## 1.3.15 (2025-12-06)
+
+### Fixed
+
+- Fixed 'now' display showing wrong temperature/time at early morning hours and day transitions
+- getCurrentSlot() now correctly checks all schedule periods instead of breaking early
+- Properly returns last period from yesterday when current day's schedule hasn't started yet
+- Edge cases like 3:30 AM now correctly show yesterday's final temperature until today's first period
+
 ## 1.3.14 (2025-11-27)
 
 ### Fixed

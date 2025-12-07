@@ -1,3 +1,9 @@
+## 1.3.16 (2025-12-07)
+
+### Fixed
+
+- Fixed syntax error with extra comma in console.info() call
+
 ## 1.3.15 (2025-12-06)
 
 ### Fixed

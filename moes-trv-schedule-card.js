@@ -469,7 +469,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.15 ',,
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.16 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

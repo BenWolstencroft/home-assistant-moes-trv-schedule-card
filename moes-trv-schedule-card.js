@@ -504,8 +504,22 @@ class MoesTrvScheduleCard extends HTMLElement {
   _closeDialog() {
     this._showDialog = false;
     // Refresh schedule from entity when dialog closes
-    this.parseScheduleFromEntity();
+    this.refreshScheduleFromEntity();
     this.render();
+  }
+
+  refreshScheduleFromEntity() {
+    // Re-read schedule from entity based on entity type
+    const entity = this._hass?.states[this._config.entity];
+    if (!entity) return;
+
+    if (entity.attributes.schedule) {
+      this.parseScheduleFromEntity(entity.attributes.schedule);
+    } else if (this._config.entity.startsWith('text.') && entity.state && entity.state !== 'unknown') {
+      this.parseScheduleFromEntity(entity.state);
+    } else if (this._config.entity.startsWith('sensor.') && this.hasProgramAttributes(entity)) {
+      this.parseScheduleFromProgramAttributes(entity.attributes);
+    }
   }
 
   getCardSize() {

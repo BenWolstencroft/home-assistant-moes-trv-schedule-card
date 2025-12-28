@@ -3,14 +3,14 @@
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
  * 
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.3.15
+ * Version: 1.3.17
  * 
  * Features:
  * - Three schedule groups (Weekdays, Saturday, Sunday)
  * - Four time periods per group (MOES TRV standard)
  * - Temperature settings for each period
  * - Visual schedule editor
- * - Supports text entities (Zigbee/MQTT) and climate entities (Tuya)
+ * - Supports text entities (Zigbee/MQTT), climate entities (Tuya), and sensor entities (program attributes)
  */
 
 class MoesTrvScheduleCard extends HTMLElement {
@@ -44,6 +44,10 @@ class MoesTrvScheduleCard extends HTMLElement {
         // For text entities, the schedule is the state itself
         else if (this._config.entity.startsWith('text.') && entity.state && entity.state !== 'unknown') {
           this.parseScheduleFromEntity(entity.state);
+        }
+        // For sensor entities with program attributes (e.g., sensor.*_program)
+        else if (this._config.entity.startsWith('sensor.') && this.hasProgramAttributes(entity)) {
+          this.parseScheduleFromProgramAttributes(entity.attributes);
         }
       }
       
@@ -99,6 +103,69 @@ class MoesTrvScheduleCard extends HTMLElement {
       };
     }
     return { time: '00:00', temp: 15 };
+  }
+
+  hasProgramAttributes(entity) {
+    // Check if entity has program-style attributes
+    // Can be either nested under 'program' key or flat attributes
+    if (!entity || !entity.attributes) return false;
+    
+    // Check for nested program object (Zigbee2MQTT style)
+    if (entity.attributes.program) {
+      const program = entity.attributes.program;
+      return (
+        program.weekdays_p1_hour !== undefined ||
+        program.saturday_p1_hour !== undefined ||
+        program.sunday_p1_hour !== undefined
+      );
+    }
+    
+    // Check for flat attributes
+    return (
+      entity.attributes.weekdays_p1_hour !== undefined ||
+      entity.attributes.saturday_p1_hour !== undefined ||
+      entity.attributes.sunday_p1_hour !== undefined
+    );
+  }
+
+  parseScheduleFromProgramAttributes(attributes) {
+    // Parse format like: weekdays_p1_hour, weekdays_p1_minute, weekdays_p1_temperature
+    // Days: weekdays, saturday, sunday
+    // Periods: p1, p2, p3, p4
+    
+    // Handle both nested (attributes.program) and flat attribute structures
+    const programData = attributes.program || attributes;
+    
+    const days = ['weekdays', 'saturday', 'sunday'];
+    const periods = ['p1', 'p2', 'p3', 'p4'];
+    
+    const schedule = {
+      weekdays: [],
+      saturday: [],
+      sunday: []
+    };
+
+    for (const day of days) {
+      for (const period of periods) {
+        const hourKey = `${day}_${period}_hour`;
+        const minuteKey = `${day}_${period}_minute`;
+        const tempKey = `${day}_${period}_temperature`;
+        
+        const hour = programData[hourKey];
+        const minute = programData[minuteKey];
+        const temp = programData[tempKey];
+        
+        if (hour !== undefined && minute !== undefined && temp !== undefined) {
+          const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          schedule[day].push({ time, temp: parseFloat(temp) });
+        } else {
+          // Use defaults if attributes are missing
+          schedule[day].push({ time: '00:00', temp: 15 });
+        }
+      }
+    }
+
+    this._schedule = schedule;
   }
 
   formatScheduleForEntity() {
@@ -469,7 +536,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.16 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.17 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

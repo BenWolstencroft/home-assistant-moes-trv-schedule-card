@@ -99,12 +99,12 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
             .hass="${this._hass}"
             .value="${this._config.entity || ''}"
             .label="Entity"
-            .includeDomains="${['climate', 'text']}"
+            .includeDomains="${['climate', 'text', 'sensor']}"
             .allowCustomEntity="${true}"
             @value-changed="${this._entityChanged}"
           ></ha-entity-picker>
           <div class="help-text">
-            Select the schedule entity for your MOES TRV (climate entity or text entity for Zigbee/MQTT devices)
+            Select the schedule entity for your MOES TRV (climate entity, text entity for Zigbee/MQTT devices, or sensor entity with program attributes)
           </div>
         </div>
         
@@ -187,6 +187,21 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
           />
           <label for="24hour-checkbox">Use 24-hour time format</label>
         </div>
+        
+        <div class="section-title">Zigbee2MQTT Settings (Optional)</div>
+        
+        <div class="config-row">
+          <label for="mqtt-topic-input">MQTT Device Name (optional)</label>
+          <input 
+            type="text" 
+            id="mqtt-topic-input" 
+            value="${this._config.mqtt_device_name || ''}"
+            placeholder="e.g., Entrance Underfloor Heating"
+          />
+          <div class="help-text">
+            For sensor._program entities: the Zigbee2MQTT device friendly name. Leave empty to auto-detect.
+          </div>
+        </div>
       </div>
     `;
 
@@ -232,6 +247,12 @@ class MoesTrvScheduleCardEditor extends HTMLElement {
     const time24HourCheckbox = this.shadowRoot.getElementById('24hour-checkbox');
     time24HourCheckbox.addEventListener('change', (e) => {
       this._config = { ...this._config, time_format: e.target.checked ? '24h' : '12h' };
+      this.configChanged(this._config);
+    });
+
+    const mqttTopicInput = this.shadowRoot.getElementById('mqtt-topic-input');
+    mqttTopicInput.addEventListener('change', (e) => {
+      this._config = { ...this._config, mqtt_device_name: e.target.value };
       this.configChanged(this._config);
     });
   }

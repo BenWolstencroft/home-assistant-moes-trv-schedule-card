@@ -50,6 +50,52 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
     return parts.join('  ');
   }
 
+  formatScheduleForSensorEntity() {
+    // Format schedule as attributes for sensor-based devices
+    // Format: weekdays_p1_hour, weekdays_p1_minute, weekdays_p1_temperature, etc.
+    const data = {};
+    const days = ['weekdays', 'saturday', 'sunday'];
+    const periodNames = ['p1', 'p2', 'p3', 'p4'];
+
+    for (const day of days) {
+      const periods = this._schedule[day] || [];
+      for (let i = 0; i < periods.length && i < 4; i++) {
+        const period = periods[i];
+        const periodName = periodNames[i];
+        const [hour, minute] = period.time.split(':').map(Number);
+        
+        data[`${day}_${periodName}_hour`] = hour;
+        data[`${day}_${periodName}_minute`] = minute;
+        data[`${day}_${periodName}_temperature`] = period.temp;
+      }
+    }
+
+    return data;
+  }
+
+  hasProgramAttributes(entity) {
+    // Check if entity has program-style attributes
+    // Can be either nested under 'program' key or flat attributes
+    if (!entity || !entity.attributes) return false;
+    
+    // Check for nested program object (Zigbee2MQTT style)
+    if (entity.attributes.program) {
+      const program = entity.attributes.program;
+      return (
+        program.weekdays_p1_hour !== undefined ||
+        program.saturday_p1_hour !== undefined ||
+        program.sunday_p1_hour !== undefined
+      );
+    }
+    
+    // Check for flat attributes
+    return (
+      entity.attributes.weekdays_p1_hour !== undefined ||
+      entity.attributes.saturday_p1_hour !== undefined ||
+      entity.attributes.sunday_p1_hour !== undefined
+    );
+  }
+
   render() {
     if (!this._hass || !this._config || !this._schedule) {
       return;
@@ -279,13 +325,47 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       // Determine where the schedule came from to know how to set it
       const hasScheduleAttribute = entity.attributes && entity.attributes.schedule !== undefined;
       const isTextEntity = this._config.entity.startsWith('text.');
+      const isSensorEntity = this._config.entity.startsWith('sensor.');
+      const hasProgramAttrs = this.hasProgramAttributes(entity);
       
-      if (isTextEntity && !hasScheduleAttribute) {
+      if (isSensorEntity && hasProgramAttrs) {
+        // Sensor entity with program attributes - use MQTT to set via Zigbee2MQTT
+        const programData = this.formatScheduleForSensorEntity();
+        
+        // Get the device's friendly name for MQTT topic
+        let mqttDeviceName = null;
+        
+        // First, check if user has explicitly configured the MQTT device name
+        if (this._config.mqtt_device_name) {
+          mqttDeviceName = this._config.mqtt_device_name;
+        }
+        // Fall back to deriving from entity ID (most reliable for Z2M)
+        // Entity ID format: sensor.entrance_underfloor_heating_program
+        // MQTT topic format: zigbee2mqtt/entrance_underfloor_heating/set
+        else {
+          const entityName = this._config.entity.split('.')[1];
+          // Remove _program suffix to get the device name
+          mqttDeviceName = entityName.replace(/_program$/, '');
+        }
+        
+        // Publish to MQTT via Home Assistant's mqtt.publish service
+        // Wrap in 'program' object as Zigbee2MQTT expects this structure
+        const mqttTopic = `zigbee2mqtt/${mqttDeviceName}/set`;
+        const mqttPayload = { program: programData };
+        
+        await this._hass.callService('mqtt', 'publish', {
+          topic: mqttTopic,
+          payload: JSON.stringify(mqttPayload)
+        });
+        
+        this.showStatus('Schedule applied via MQTT!', 'success');
+      } else if (isTextEntity && !hasScheduleAttribute) {
         // Text entity where schedule is in the state
         await this._hass.callService('text', 'set_value', {
           entity_id: this._config.entity,
           value: scheduleString
         });
+        this.showStatus('Schedule applied successfully!', 'success');
       } else if (hasScheduleAttribute) {
         // Schedule is in an attribute - need to find the source entity
         // For climate entities with schedule attribute, look for the underlying text entity
@@ -311,6 +391,7 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
               entity_id: targetTextEntity,
               value: scheduleString
             });
+            this.showStatus('Schedule applied successfully!', 'success');
           } else {
             throw new Error(`Cannot update schedule for ${this._config.entity}. No writable text entity found for schedule attribute.`);
           }
@@ -318,10 +399,8 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           throw new Error(`Cannot update schedule attribute for ${this._config.entity}. Attributes are read-only.`);
         }
       } else {
-        throw new Error(`No schedule data found for ${this._config.entity}. Entity must have either a 'schedule' attribute or be a text entity.`);
+        throw new Error(`No schedule data found for ${this._config.entity}. Entity must have either a 'schedule' attribute, be a text entity, or be a sensor with program attributes.`);
       }
-      
-      this.showStatus('Schedule applied successfully!', 'success');
       
       // Close dialog after 1 second
       setTimeout(() => {

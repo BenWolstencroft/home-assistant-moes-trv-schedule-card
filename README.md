@@ -2,7 +2,7 @@
 
 A custom Home Assistant Lovelace card for managing weekly heating schedules on MOES Thermostatic Radiator Valves (TRVs).
 
-![Version](https://img.shields.io/badge/version-1.3.15-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.17-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2023.1%2B-green.svg)
 ![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -104,13 +104,14 @@ entity: climate.bedroom_trv
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `entity` | string | **Required** | Entity ID of your MOES TRV schedule (text.* or climate.*) |
+| `entity` | string | **Required** | Entity ID of your MOES TRV schedule (text.*, climate.*, or sensor.*_program) |
 | `title` | string | `TRV Schedule` | Custom card title |
 | `show_current_temp` | boolean | `true` | Show current temperature |
 | `min_temp` | number | `5` | Minimum allowed temperature (°C) |
 | `max_temp` | number | `35` | Maximum allowed temperature (°C) |
 | `temp_step` | number | `0.5` | Temperature adjustment step (°C) |
 | `time_format` | string | `24h` | Time format: `24h` or `12h` |
+| `mqtt_device_name` | string | (auto-detect) | Zigbee2MQTT device friendly name for sensor entities (optional) |
 
 ### Full Configuration Example
 
@@ -136,6 +137,20 @@ min_temp: 10
 max_temp: 28
 temp_step: 0.5
 time_format: 24h
+```
+
+```yaml
+# For Sensor entities with program attributes (Zigbee2MQTT)
+type: custom:moes-trv-schedule-card
+entity: sensor.entrance_underfloor_heating_program
+title: Entrance UFH Schedule
+show_current_temp: true
+min_temp: 10
+max_temp: 28
+temp_step: 0.5
+time_format: 24h
+# Optional: specify MQTT device name if auto-detection doesn't work
+mqtt_device_name: Entrance Underfloor Heating
 ```
 
 ## Usage
@@ -208,6 +223,32 @@ This card is designed to work with MOES TRVs integrated into Home Assistant thro
 
 - `text.*` entities - Common for Zigbee devices with schedule attributes
 - `climate.*` entities - Traditional climate/thermostat entities
+- `sensor.*_program` entities - Devices with program attributes (read-only viewing)
+
+### Sensor Program Attributes Format
+
+Some devices expose their schedules as sensor attributes in the following format:
+
+```json
+{
+  "weekdays_p1_hour": 6,
+  "weekdays_p1_minute": 0,
+  "weekdays_p1_temperature": 20,
+  "weekdays_p2_hour": 10,
+  "weekdays_p2_minute": 0,
+  "weekdays_p2_temperature": 15,
+  "saturday_p1_hour": 6,
+  "saturday_p1_minute": 0,
+  "saturday_p1_temperature": 20,
+  "sunday_p1_hour": 6,
+  "sunday_p1_minute": 0,
+  "sunday_p1_temperature": 20
+}
+```
+
+Each day (weekdays, saturday, sunday) has 4 periods (p1-p4), with hour, minute, and temperature attributes.
+
+**Note**: For sensor program entities, this card saves schedules via **MQTT** using the `mqtt.publish` service. It will publish to `zigbee2mqtt/<device_name>/set` with the schedule data. If auto-detection of the device name doesn't work, you can specify it manually using the `mqtt_device_name` config option.
 
 ### MOES TRV Models
 
@@ -217,6 +258,7 @@ Tested and compatible with:
 - MOES HY368 / HY369
 - MOES ZigBee TRV
 - Similar Tuya-based TRVs
+- Zigbee2MQTT underfloor heating thermostats with program attributes
 
 ## Troubleshooting
 
@@ -231,9 +273,10 @@ Tested and compatible with:
 
 1. **For text entities**: Verify the entity accepts the `text.set_value` service
 2. **For climate entities**: Check that your TRV integration supports schedule setting
-3. Check Home Assistant logs for error messages
-4. Ensure your TRV is online and responding
-5. Verify the schedule string format matches what your device expects
+3. **For sensor entities**: Ensure MQTT integration is configured and the device name is correct
+4. Check Home Assistant logs for error messages
+5. Ensure your TRV is online and responding
+6. Verify the schedule string format matches what your device expects
 
 ### Entity Not Found
 

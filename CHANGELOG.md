@@ -1,3 +1,18 @@
+## 1.3.17 (2025-12-28)
+
+### Added
+
+- Support for sensor entities with program attributes (e.g., `sensor.*_program`)
+- New sensor format support: `weekdays_p1_hour`, `weekdays_p1_minute`, `weekdays_p1_temperature`, etc.
+- Automatic detection and parsing of sensor program attributes for weekdays, saturday, and sunday schedules
+- **Write support for sensor entities via MQTT** - schedules can now be saved to Zigbee2MQTT devices
+- New `mqtt_device_name` config option to manually specify the Zigbee2MQTT device name if auto-detection fails
+
+### Changed
+
+- Entity picker in editor now includes `sensor` domain for program entity selection
+- Updated documentation with sensor entity configuration examples
+
 ## 1.3.16 (2025-12-07)
 
 ### Fixed

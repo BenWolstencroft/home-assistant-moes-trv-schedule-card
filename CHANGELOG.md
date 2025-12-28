@@ -1,3 +1,10 @@
+## 1.3.18 (2025-12-28)
+
+### Fixed
+
+- Fixed crash when closing schedule editor dialog for sensor entities
+- Added `refreshScheduleFromEntity()` method to properly detect entity type when refreshing
+
 ## 1.3.17 (2025-12-28)
 
 ### Added

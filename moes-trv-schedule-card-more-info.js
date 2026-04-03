@@ -4,19 +4,31 @@
  */
 
 class MoesTrvScheduleMoreInfo extends HTMLElement {
+  static SONOFF_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  static SONOFF_PATTERN = /^text\.(.+)_weekly_schedule_(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this._schedule = null;
+    this._deviceType = 'moes';
     this._statusMessage = null;
     this._statusType = null;
     this._openDay = this.getCurrentDayKey(); // Default to current day
   }
 
+  setDeviceType(type) {
+    this._deviceType = type;
+    this._openDay = this.getCurrentDayKey();
+  }
+
   getCurrentDayKey() {
     const now = new Date();
     const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
-    
+
+    if (this._deviceType === 'sonoff') {
+      return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek];
+    }
     if (dayOfWeek === 0) {
       return 'sunday';
     } else if (dayOfWeek === 6) {
@@ -71,6 +83,23 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
     }
 
     return data;
+  }
+
+  formatSonoffScheduleForDay(day) {
+    // Format: "00:00/16 07:00/19 10:00/16 10:00/16 17:00/19 23:00/16"
+    const periods = this._schedule[day] || [];
+    return periods.map(p => `${p.time}/${p.temp}`).join(' ');
+  }
+
+  getSonoffBaseEntityId() {
+    const match = this._config.entity.match(MoesTrvScheduleMoreInfo.SONOFF_PATTERN);
+    if (!match) return null;
+    return match[1];
+  }
+
+  getSonoffDayEntityId(day) {
+    const base = this.getSonoffBaseEntityId();
+    return base ? `text.${base}_weekly_schedule_${day}` : null;
   }
 
   hasProgramAttributes(entity) {
@@ -241,12 +270,17 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
   }
 
   renderDays() {
-    const scheduleGroups = [
-      { key: 'weekdays', name: 'Weekdays'},
-      { key: 'saturday', name: 'Saturday'},
-      { key: 'sunday', name: 'Sunday' }
-    ];
-    
+    const scheduleGroups = this._deviceType === 'sonoff'
+      ? MoesTrvScheduleMoreInfo.SONOFF_DAYS.map(day => ({
+          key: day,
+          name: day.charAt(0).toUpperCase() + day.slice(1)
+        }))
+      : [
+          { key: 'weekdays', name: 'Weekdays'},
+          { key: 'saturday', name: 'Saturday'},
+          { key: 'sunday', name: 'Sunday' }
+        ];
+
     return scheduleGroups.map((group) => {
       const isCollapsed = this._openDay !== group.key;
       return `
@@ -315,19 +349,37 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
 
   async saveSchedule() {
     try {
+      // Handle Sonoff TRVZB - save each day to its own text entity
+      if (this._deviceType === 'sonoff') {
+        for (const day of MoesTrvScheduleMoreInfo.SONOFF_DAYS) {
+          const entityId = this.getSonoffDayEntityId(day);
+          if (!entityId) continue;
+          const value = this.formatSonoffScheduleForDay(day);
+          await this._hass.callService('text', 'set_value', {
+            entity_id: entityId,
+            value: value
+          });
+        }
+        this.showStatus('Schedule applied successfully!', 'success');
+        setTimeout(() => {
+          this.dispatchEvent(new CustomEvent('close-dialog'));
+        }, 1000);
+        return;
+      }
+
       const scheduleString = this.formatScheduleForEntity();
       const entity = this._hass.states[this._config.entity];
-      
+
       if (!entity) {
         throw new Error(`Entity ${this._config.entity} not found`);
       }
-      
+
       // Determine where the schedule came from to know how to set it
       const hasScheduleAttribute = entity.attributes && entity.attributes.schedule !== undefined;
       const isTextEntity = this._config.entity.startsWith('text.');
       const isSensorEntity = this._config.entity.startsWith('sensor.');
       const hasProgramAttrs = this.hasProgramAttributes(entity);
-      
+
       if (isSensorEntity && hasProgramAttrs) {
         // Sensor entity with program attributes - use MQTT to set via Zigbee2MQTT
         const programData = this.formatScheduleForSensorEntity();

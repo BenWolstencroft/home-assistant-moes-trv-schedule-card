@@ -1,3 +1,13 @@
+## 1.4.0 (2026-04-03)
+
+### Added
+
+- Support for Sonoff TRVZB thermostatic radiator valves
+- Seven individual day schedules (Monday-Sunday) with 6 periods each for Sonoff devices
+- Auto-detection of Sonoff entities via `text.*_weekly_schedule_{day}` naming pattern
+- Auto-discovery of all 7 day entities from a single configured entity
+- Sonoff schedule format parsing and writing (`HH:MM/temp` with single space separator)
+
 ## 1.3.18 (2025-12-28)
 
 ### Fixed

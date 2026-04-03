@@ -1,61 +1,103 @@
 /**
  * MOES TRV Schedule Card
  * Custom Lovelace card for managing schedules on MOES Thermostatic Radiator Valves
- * 
+ *
  * Repository: https://github.com/BenWolstencroft/home-assistant-moes-trv-schedule-card
- * Version: 1.3.18
- * 
+ * Version: 1.4.0
+ *
  * Features:
- * - Three schedule groups (Weekdays, Saturday, Sunday)
- * - Four time periods per group (MOES TRV standard)
+ * - Three schedule groups (Weekdays, Saturday, Sunday) for MOES TRVs
+ * - Seven individual day schedules for Sonoff TRVZB
+ * - Four time periods per group (MOES TRV standard) / Six time periods per day (Sonoff TRVZB)
  * - Temperature settings for each period
  * - Visual schedule editor
- * - Supports text entities (Zigbee/MQTT), climate entities (Tuya), and sensor entities (program attributes)
+ * - Supports text entities (Zigbee/MQTT), climate entities (Tuya), sensor entities (program attributes), and Sonoff TRVZB
  */
 
 class MoesTrvScheduleCard extends HTMLElement {
+  static SONOFF_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  static SONOFF_PATTERN = /^text\.(.+)_weekly_schedule_(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/;
+
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this._config = {};
+    this._deviceType = 'moes'; // 'moes' or 'sonoff'
     this._schedule = this.getDefaultSchedule();
     this._showDialog = false;
   }
 
   setConfig(config) {
     if (!config.entity) {
-      throw new Error('Please define a MOES TRV schedule entity');
+      throw new Error('Please define a TRV schedule entity');
     }
     this._config = config;
+    this._deviceType = this.isSonoffEntity(config.entity) ? 'sonoff' : 'moes';
+    this._schedule = this.getDefaultSchedule();
+  }
+
+  isSonoffEntity(entityId) {
+    return MoesTrvScheduleCard.SONOFF_PATTERN.test(entityId);
+  }
+
+  getSonoffBaseEntityId() {
+    const match = this._config.entity.match(MoesTrvScheduleCard.SONOFF_PATTERN);
+    if (!match) return null;
+    return match[1]; // e.g., "living_room_trv" from "text.living_room_trv_weekly_schedule_monday"
+  }
+
+  getSonoffDayEntityId(day) {
+    const base = this.getSonoffBaseEntityId();
+    return base ? `text.${base}_weekly_schedule_${day}` : null;
   }
 
   set hass(hass) {
     this._hass = hass;
-    
+
     // Don't refresh schedule data or re-render if dialog is open to prevent UI resets
     if (!this._showDialog) {
-      // Get current schedule from entity if available
-      const entity = hass.states[this._config.entity];
-      if (entity) {
-        // Try to get schedule from attribute first
-        if (entity.attributes.schedule) {
-          this.parseScheduleFromEntity(entity.attributes.schedule);
-        }
-        // For text entities, the schedule is the state itself
-        else if (this._config.entity.startsWith('text.') && entity.state && entity.state !== 'unknown') {
-          this.parseScheduleFromEntity(entity.state);
-        }
-        // For sensor entities with program attributes (e.g., sensor.*_program)
-        else if (this._config.entity.startsWith('sensor.') && this.hasProgramAttributes(entity)) {
-          this.parseScheduleFromProgramAttributes(entity.attributes);
+      if (this._deviceType === 'sonoff') {
+        this.parseSonoffSchedule(hass);
+      } else {
+        // Get current schedule from entity if available
+        const entity = hass.states[this._config.entity];
+        if (entity) {
+          // Try to get schedule from attribute first
+          if (entity.attributes.schedule) {
+            this.parseScheduleFromEntity(entity.attributes.schedule);
+          }
+          // For text entities, the schedule is the state itself
+          else if (this._config.entity.startsWith('text.') && entity.state && entity.state !== 'unknown') {
+            this.parseScheduleFromEntity(entity.state);
+          }
+          // For sensor entities with program attributes (e.g., sensor.*_program)
+          else if (this._config.entity.startsWith('sensor.') && this.hasProgramAttributes(entity)) {
+            this.parseScheduleFromProgramAttributes(entity.attributes);
+          }
         }
       }
-      
+
       this.render();
     }
   }
 
   getDefaultSchedule() {
+    if (this._deviceType === 'sonoff') {
+      // Sonoff TRVZB: 7 individual days, 6 periods each
+      const defaultDay = [
+        { time: '00:00', temp: 16 },
+        { time: '07:00', temp: 19 },
+        { time: '10:00', temp: 16 },
+        { time: '10:00', temp: 16 },
+        { time: '17:00', temp: 19 },
+        { time: '23:00', temp: 16 }
+      ];
+      const schedule = {};
+      for (const day of MoesTrvScheduleCard.SONOFF_DAYS) {
+        schedule[day] = defaultDay.map(p => ({ ...p }));
+      }
+      return schedule;
+    }
     // MOES TRVs have 3 schedule groups: Weekdays, Saturday, Sunday
     // Each group has exactly 4 periods
     return {
@@ -103,6 +145,22 @@ class MoesTrvScheduleCard extends HTMLElement {
       };
     }
     return { time: '00:00', temp: 15 };
+  }
+
+  parseSonoffSchedule(hass) {
+    const schedule = {};
+    for (const day of MoesTrvScheduleCard.SONOFF_DAYS) {
+      const entityId = this.getSonoffDayEntityId(day);
+      const entity = entityId ? hass.states[entityId] : null;
+      if (entity && entity.state && entity.state !== 'unknown') {
+        // Sonoff format: "00:00/16 07:00/19 10:00/16 10:00/16 17:00/19 23:00/16" (single space, no °C)
+        const parts = entity.state.split(' ').filter(p => p.trim());
+        schedule[day] = parts.map(this.parsePeriod);
+      } else {
+        schedule[day] = this.getDefaultSchedule()[day];
+      }
+    }
+    this._schedule = schedule;
   }
 
   hasProgramAttributes(entity) {
@@ -179,42 +237,34 @@ class MoesTrvScheduleCard extends HTMLElement {
     return [...weekdaysParts, ...saturdayParts, ...sundayParts].join('  ');
   }
 
+  getScheduleKeyForDay(jsDayNum) {
+    // jsDayNum: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    if (this._deviceType === 'sonoff') {
+      return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][jsDayNum];
+    }
+    if (jsDayNum === 0) return 'sunday';
+    if (jsDayNum === 6) return 'saturday';
+    return 'weekdays';
+  }
+
   getNextTransition() {
     const now = new Date();
-    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentDay = now.getDay();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
-    // Determine which schedule group to use
-    let scheduleKey;
-    if (currentDay === 0) {
-      scheduleKey = 'sunday';
-    } else if (currentDay === 6) {
-      scheduleKey = 'saturday';
-    } else {
-      scheduleKey = 'weekdays';
-    }
-    
+
+    const scheduleKey = this.getScheduleKeyForDay(currentDay);
     const todaySchedule = this._schedule[scheduleKey];
-    
+
     // Find next transition today
     for (const period of todaySchedule) {
       if (period.time > currentTime) {
         return { time: period.time, temp: period.temp, today: true };
       }
     }
-    
+
     // If no more transitions today, get first period of tomorrow
-    let tomorrowKey;
-    if (currentDay === 6) { // Saturday -> Sunday
-      tomorrowKey = 'sunday';
-    } else if (currentDay === 0) { // Sunday -> Monday (weekdays)
-      tomorrowKey = 'weekdays';
-    } else if (currentDay === 5) { // Friday -> Saturday
-      tomorrowKey = 'saturday';
-    } else { // Weekday -> Weekday
-      tomorrowKey = 'weekdays';
-    }
-    
+    const tomorrowDay = (currentDay + 1) % 7;
+    const tomorrowKey = this.getScheduleKeyForDay(tomorrowDay);
     const tomorrowSchedule = this._schedule[tomorrowKey];
     return { time: tomorrowSchedule[0].time, temp: tomorrowSchedule[0].temp, today: false };
   }
@@ -234,18 +284,10 @@ class MoesTrvScheduleCard extends HTMLElement {
     const now = new Date();
     const currentDay = now.getDay();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
-    let scheduleKey;
-    if (currentDay === 0) {
-      scheduleKey = 'sunday';
-    } else if (currentDay === 6) {
-      scheduleKey = 'saturday';
-    } else {
-      scheduleKey = 'weekdays';
-    }
-    
+
+    const scheduleKey = this.getScheduleKeyForDay(currentDay);
     const todaySchedule = this._schedule[scheduleKey];
-    
+
     // Find the current slot (last period that has started today)
     let currentSlot = null;
     for (const period of todaySchedule) {
@@ -253,24 +295,15 @@ class MoesTrvScheduleCard extends HTMLElement {
         currentSlot = period;
       }
     }
-    
+
     // If no period has started today, use the last period from yesterday
     if (!currentSlot) {
-      let yesterdayKey;
-      if (currentDay === 0) { // Sunday - yesterday was Saturday
-        yesterdayKey = 'saturday';
-      } else if (currentDay === 1) { // Monday - yesterday was Sunday
-        yesterdayKey = 'sunday';
-      } else if (currentDay === 6) { // Saturday - yesterday was Friday (weekday)
-        yesterdayKey = 'weekdays';
-      } else { // Other weekdays - yesterday was weekday
-        yesterdayKey = 'weekdays';
-      }
-      
+      const yesterdayDay = (currentDay + 6) % 7;
+      const yesterdayKey = this.getScheduleKeyForDay(yesterdayDay);
       const yesterdaySchedule = this._schedule[yesterdayKey];
-      currentSlot = yesterdaySchedule[yesterdaySchedule.length - 1]; // Last period of yesterday
+      currentSlot = yesterdaySchedule[yesterdaySchedule.length - 1];
     }
-    
+
     return { time: currentSlot.time, temp: currentSlot.temp };
   }
 
@@ -480,6 +513,7 @@ class MoesTrvScheduleCard extends HTMLElement {
         if (dialogContent) {
           const moreInfo = document.createElement('moes-trv-schedule-more-info');
           moreInfo.setConfig(this._config);
+          moreInfo.setDeviceType(this._deviceType);
           moreInfo.hass = this._hass;
           moreInfo.setSchedule(this._schedule);
           
@@ -509,6 +543,11 @@ class MoesTrvScheduleCard extends HTMLElement {
   }
 
   refreshScheduleFromEntity() {
+    if (this._deviceType === 'sonoff') {
+      this.parseSonoffSchedule(this._hass);
+      return;
+    }
+
     // Re-read schedule from entity based on entity type
     const entity = this._hass?.states[this._config.entity];
     if (!entity) return;
@@ -550,7 +589,7 @@ window.customCards.push({
 });
 
 console.info(
-  '%c MOES-TRV-SCHEDULE-CARD %c 1.3.18 ',
+  '%c MOES-TRV-SCHEDULE-CARD %c 1.4.0 ',
   'color: white; background: #039be5; font-weight: 700;',
   'color: #039be5; background: white; font-weight: 700;'
 );

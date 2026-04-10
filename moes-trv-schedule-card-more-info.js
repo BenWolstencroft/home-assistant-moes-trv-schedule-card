@@ -249,6 +249,42 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
           background: var(--error-color, #f44336);
           color: white;
         }
+        .remove-period-btn {
+          background: none;
+          border: 1px solid var(--divider-color);
+          border-radius: 4px;
+          cursor: pointer;
+          color: var(--error-color, #f44336);
+          font-size: 18px;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          flex-shrink: 0;
+          transition: all 0.2s;
+        }
+        .remove-period-btn:hover {
+          background: var(--error-color, #f44336);
+          color: white;
+        }
+        .add-period-btn {
+          background: none;
+          border: 1px dashed var(--divider-color);
+          border-radius: 4px;
+          cursor: pointer;
+          color: var(--primary-color);
+          padding: 8px;
+          width: 100%;
+          font-size: 14px;
+          margin-top: 4px;
+          transition: all 0.2s;
+        }
+        .add-period-btn:hover {
+          background: var(--primary-background-color);
+          border-color: var(--primary-color);
+        }
       </style>
       
       <div class="container">
@@ -302,13 +338,30 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
 
   renderPeriods(day) {
     const periods = this._schedule[day] || [];
-    return periods.map((period, index) => `
-      <div class="period" data-day="${day}" data-index="${index}">
-        <input type="time" value="${period.time}" data-field="time" />
-        <input type="number" value="${period.temp}" min="5" max="35" step="0.5" data-field="temp" />
-        <span class="temp-unit">°C</span>
-      </div>
-    `).join('');
+    const isSonoff = this._deviceType === 'sonoff';
+    const minTemp = isSonoff ? 4 : 5;
+
+    let html = periods.map((period, index) => {
+      const isFirstPeriod = index === 0;
+      const timeAttrs = isSonoff && isFirstPeriod ? 'disabled' : '';
+      const removeBtn = isSonoff && !isFirstPeriod
+        ? `<button class="remove-period-btn" data-day="${day}" data-index="${index}" title="Remove transition">&times;</button>`
+        : '';
+      return `
+        <div class="period" data-day="${day}" data-index="${index}">
+          <input type="time" value="${period.time}" data-field="time" ${timeAttrs} />
+          <input type="number" value="${period.temp}" min="${minTemp}" max="35" step="0.5" data-field="temp" />
+          <span class="temp-unit">°C</span>
+          ${removeBtn}
+        </div>
+      `;
+    }).join('');
+
+    if (isSonoff && periods.length < 6) {
+      html += `<button class="add-period-btn" data-day="${day}">+ Add Transition</button>`;
+    }
+
+    return html;
   }
 
   attachEventListeners() {
@@ -340,6 +393,34 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
       });
     });
 
+    // Add transition buttons (Sonoff)
+    this.shadowRoot.querySelectorAll('.add-period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const day = btn.dataset.day;
+        const periods = this._schedule[day];
+        if (periods.length < 6) {
+          const lastPeriod = periods[periods.length - 1];
+          const [lastH, lastM] = lastPeriod.time.split(':').map(Number);
+          const nextMinutes = Math.min(lastH * 60 + lastM + 60, 23 * 60);
+          const newTime = `${String(Math.floor(nextMinutes / 60)).padStart(2, '0')}:${String(nextMinutes % 60).padStart(2, '0')}`;
+          periods.push({ time: newTime, temp: lastPeriod.temp });
+          this.render();
+        }
+      });
+    });
+
+    // Remove transition buttons (Sonoff)
+    this.shadowRoot.querySelectorAll('.remove-period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const day = btn.dataset.day;
+        const index = parseInt(btn.dataset.index);
+        if (this._schedule[day].length > 1) {
+          this._schedule[day].splice(index, 1);
+          this.render();
+        }
+      });
+    });
+
     // Apply button
     const applyBtn = this.shadowRoot.getElementById('apply-btn');
     if (applyBtn) {
@@ -351,6 +432,32 @@ class MoesTrvScheduleMoreInfo extends HTMLElement {
     try {
       // Handle Sonoff TRVZB - save each day to its own text entity
       if (this._deviceType === 'sonoff') {
+        // Validate and sort transitions
+        for (const day of MoesTrvScheduleMoreInfo.SONOFF_DAYS) {
+          const periods = this._schedule[day];
+          const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+          if (!periods || periods.length === 0) {
+            this.showStatus(`${dayName}: At least one transition is required`, 'error');
+            return;
+          }
+          if (periods.length > 6) {
+            this.showStatus(`${dayName}: Maximum 6 transitions allowed`, 'error');
+            return;
+          }
+          // Sort by time
+          periods.sort((a, b) => a.time.localeCompare(b.time));
+          if (periods[0].time !== '00:00') {
+            this.showStatus(`${dayName}: First transition must start at 00:00`, 'error');
+            return;
+          }
+          for (const period of periods) {
+            if (period.temp < 4 || period.temp > 35) {
+              this.showStatus(`${dayName}: Temperature must be between 4°C and 35°C`, 'error');
+              return;
+            }
+          }
+        }
+
         for (const day of MoesTrvScheduleMoreInfo.SONOFF_DAYS) {
           const entityId = this.getSonoffDayEntityId(day);
           if (!entityId) continue;

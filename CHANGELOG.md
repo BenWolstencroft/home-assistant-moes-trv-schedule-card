@@ -1,3 +1,16 @@
+## 1.4.1 (2026-04-10)
+
+### Fixed
+
+- Fixed Sonoff TRVZB temperature minimum from 5°C to correct 4°C (valid range: 4-35°C)
+- First transition for each day is now locked to 00:00 as required by the device
+- Added validation before saving: checks temperature range, 00:00 start, and max 6 transitions
+- Transitions are automatically sorted by time before saving
+
+### Added
+
+- Add/remove transition buttons for Sonoff schedules (supports 1-6 transitions per day)
+
 ## 1.4.0 (2026-04-03)
 
 ### Added
